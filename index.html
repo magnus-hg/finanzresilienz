@@ -87,6 +87,27 @@
           Sonstiges Vermögen (EUR)
           <input type="number" name="otherAssets" min="0" step="0.01" required />
         </label>
+      </section>
+
+      <section class="step" data-step="5">
+        <h2>Auswertung</h2>
+        <p>
+          Zusammenfassung Ihrer Angaben zu Einnahmen, Ausgaben und Vermögen.
+        </p>
+        <div class="summary-grid">
+          <article class="summary-card">
+            <h3>Gesamteinnahmen</h3>
+            <p id="summary-income-total" class="summary-value">–</p>
+          </article>
+          <article class="summary-card">
+            <h3>Einnahmen abzüglich Ausgaben</h3>
+            <p id="summary-net-income" class="summary-value">–</p>
+          </article>
+          <article class="summary-card">
+            <h3>Gesamtvermögen</h3>
+            <p id="summary-wealth-total" class="summary-value">–</p>
+          </article>
+        </div>
         <button type="button" id="download" class="primary">JSON herunterladen</button>
       </section>
 
