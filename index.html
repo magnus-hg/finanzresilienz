@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finanzielle Resilienz Umfrage</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Finanzielle Resilienz Umfrage</h1>
+      <p>Bitte füllen Sie die folgenden Abschnitte aus.</p>
+    </header>
+
+    <form id="survey-form">
+      <section class="step active" data-step="1">
+        <h2>Persönliche Informationen</h2>
+        <label>
+          Alter
+          <input type="number" name="age" min="0" required />
+        </label>
+        <label>
+          Familienstand
+          <select name="maritalStatus" required>
+            <option value="" disabled selected>Bitte wählen</option>
+            <option value="ledig">Ledig</option>
+            <option value="verheiratet">Verheiratet</option>
+            <option value="geschieden">Geschieden</option>
+            <option value="verwitwet">Verwitwet</option>
+            <option value="eingetragene Partnerschaft">Eingetragene Partnerschaft</option>
+            <option value="andere">Andere</option>
+          </select>
+        </label>
+        <label>
+          Geschlecht
+          <select name="gender" required>
+            <option value="" disabled selected>Bitte wählen</option>
+            <option value="weiblich">Weiblich</option>
+            <option value="männlich">Männlich</option>
+            <option value="divers">Divers</option>
+            <option value="keine Angabe">Keine Angabe</option>
+          </select>
+        </label>
+        <label>
+          Beruf
+          <input type="text" name="occupation" required />
+        </label>
+        <label>
+          Höchster Bildungsabschluss
+          <input type="text" name="education" required />
+        </label>
+      </section>
+
+      <section class="step" data-step="2">
+        <h2>Einnahmen</h2>
+        <p>Fügen Sie alle relevanten Einkommensquellen hinzu.</p>
+        <div id="income-list"></div>
+        <button type="button" id="add-income" class="secondary">Einkommensquelle hinzufügen</button>
+      </section>
+
+      <section class="step" data-step="3">
+        <h2>Ausgaben</h2>
+        <label>
+          Monatliche Ausgaben (EUR)
+          <input type="number" name="expenses" min="0" step="0.01" required />
+        </label>
+      </section>
+
+      <section class="step" data-step="4">
+        <h2>Vermögen</h2>
+        <label>
+          Barvermögen (EUR)
+          <input type="number" name="cash" min="0" step="0.01" required />
+        </label>
+        <label>
+          Bankvermögen (EUR)
+          <input type="number" name="bank" min="0" step="0.01" required />
+        </label>
+        <label>
+          Vermögen Einzelaktien (EUR)
+          <input type="number" name="stocks" min="0" step="0.01" required />
+        </label>
+        <label>
+          Vermögen in ETFs (EUR)
+          <input type="number" name="etfs" min="0" step="0.01" required />
+        </label>
+        <label>
+          Vermögen in Immobilien (EUR)
+          <input type="number" name="realEstate" min="0" step="0.01" required />
+        </label>
+        <label>
+          Sonstiges Vermögen (EUR)
+          <input type="number" name="otherAssets" min="0" step="0.01" required />
+        </label>
+        <button type="button" id="download" class="primary">JSON herunterladen</button>
+      </section>
+
+      <div class="navigation">
+        <button type="button" id="prev" class="secondary">Zurück</button>
+        <button type="button" id="next" class="primary">Weiter</button>
+      </div>
+    </form>
+  </main>
+
+  <template id="income-template">
+    <fieldset class="income-item">
+      <legend>Einkommensquelle</legend>
+      <label>
+        Beschreibung / Rolle
+        <input type="text" name="incomeDescription" required />
+      </label>
+      <label>
+        Einkunftsart
+        <select name="incomeType" required>
+          <option value="" disabled selected>Bitte wählen</option>
+          <option value="Land- und Forstwirtschaft">Land- und Forstwirtschaft</option>
+          <option value="Gewerbebetrieb">Gewerbebetrieb</option>
+          <option value="Selbstständige Arbeit">Selbstständige Arbeit</option>
+          <option value="Nichtselbstständige Arbeit">Nichtselbstständige Arbeit</option>
+          <option value="Kapitalvermögen">Kapitalvermögen</option>
+          <option value="Vermietung und Verpachtung">Vermietung und Verpachtung</option>
+          <option value="Sonstige Einkünfte">Sonstige Einkünfte</option>
+        </select>
+      </label>
+      <label>
+        Arbeitsstunden pro Monat
+        <input type="number" name="incomeHours" min="0" step="0.1" required />
+      </label>
+      <label>
+        Monatliches Einkommen (EUR)
+        <input type="number" name="incomeAmount" min="0" step="0.01" required />
+      </label>
+      <button type="button" class="remove secondary">Entfernen</button>
+    </fieldset>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>
