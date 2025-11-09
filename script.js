@@ -50,9 +50,7 @@ function gatherFormData() {
   const data = new FormData(form);
   const personalInfo = {
     age: Number(data.get('age')),
-    maritalStatus: data.get('maritalStatus'),
     gender: data.get('gender'),
-    occupation: data.get('occupation'),
     education: data.get('education'),
   };
 
