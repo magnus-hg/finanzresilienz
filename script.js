@@ -8,6 +8,8 @@ const incomeTemplate = document.getElementById('income-template');
 const downloadBtn = document.getElementById('download');
 const summaryIncomeTotal = document.getElementById('summary-income-total');
 const summaryNetIncome = document.getElementById('summary-net-income');
+const summaryLiquidWealth = document.getElementById('summary-liquid-wealth');
+const summaryIlliquidWealth = document.getElementById('summary-illiquid-wealth');
 const summaryWealthTotal = document.getElementById('summary-wealth-total');
 
 let currentStep = 0;
@@ -96,10 +98,15 @@ function updateSummary() {
   const totalIncome = data.incomes.reduce((sum, income) => sum + income.monthlyIncome, 0);
   const totalExpenses = data.expenses.monthlyExpenses;
   const netIncome = totalIncome - totalExpenses;
+  const liquidWealth =
+    data.assets.cash + data.assets.bank + data.assets.singleStocks + data.assets.etfs;
+  const illiquidWealth = data.assets.realEstate;
   const totalWealth = Object.values(data.assets).reduce((sum, value) => sum + value, 0);
 
   summaryIncomeTotal.textContent = currencyFormatter.format(totalIncome);
   summaryNetIncome.textContent = currencyFormatter.format(netIncome);
+  summaryLiquidWealth.textContent = currencyFormatter.format(liquidWealth);
+  summaryIlliquidWealth.textContent = currencyFormatter.format(illiquidWealth);
   summaryWealthTotal.textContent = currencyFormatter.format(totalWealth);
 }
 
