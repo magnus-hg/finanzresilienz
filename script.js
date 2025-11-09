@@ -6,8 +6,17 @@ const addIncomeBtn = document.getElementById('add-income');
 const incomeList = document.getElementById('income-list');
 const incomeTemplate = document.getElementById('income-template');
 const downloadBtn = document.getElementById('download');
+const summaryIncomeTotal = document.getElementById('summary-income-total');
+const summaryNetIncome = document.getElementById('summary-net-income');
+const summaryWealthTotal = document.getElementById('summary-wealth-total');
 
 let currentStep = 0;
+
+const currencyFormatter = new Intl.NumberFormat('de-DE', {
+  style: 'currency',
+  currency: 'EUR',
+  maximumFractionDigits: 2,
+});
 
 function showStep(index) {
   steps.forEach((step, i) => {
@@ -16,6 +25,10 @@ function showStep(index) {
 
   prevBtn.disabled = index === 0;
   nextBtn.textContent = index === steps.length - 1 ? 'Fertig' : 'Weiter';
+
+  if (index === steps.length - 1) {
+    updateSummary();
+  }
 }
 
 function validateCurrentStep() {
@@ -76,6 +89,18 @@ function gatherFormData() {
     assets,
     generatedAt: new Date().toISOString(),
   };
+}
+
+function updateSummary() {
+  const data = gatherFormData();
+  const totalIncome = data.incomes.reduce((sum, income) => sum + income.monthlyIncome, 0);
+  const totalExpenses = data.expenses.monthlyExpenses;
+  const netIncome = totalIncome - totalExpenses;
+  const totalWealth = Object.values(data.assets).reduce((sum, value) => sum + value, 0);
+
+  summaryIncomeTotal.textContent = currencyFormatter.format(totalIncome);
+  summaryNetIncome.textContent = currencyFormatter.format(netIncome);
+  summaryWealthTotal.textContent = currencyFormatter.format(totalWealth);
 }
 
 function createIncomeItem() {
