@@ -18,19 +18,8 @@
         <h2>Persönliche Informationen</h2>
         <label>
           Alter
-          <input type="number" name="age" min="0" required />
+          <input type="number" name="age" min="0" max="120" required />
         </label>
-        <div class="field">
-          <select name="maritalStatus" aria-label="Familienstand" required>
-            <option value="" disabled selected>Bitte wählen</option>
-            <option value="ledig">Ledig</option>
-            <option value="verheiratet">Verheiratet</option>
-            <option value="geschieden">Geschieden</option>
-            <option value="verwitwet">Verwitwet</option>
-            <option value="eingetragene Partnerschaft">Eingetragene Partnerschaft</option>
-            <option value="andere">Andere</option>
-          </select>
-        </div>
         <label>
           Geschlecht
           <select name="gender" required>
@@ -41,12 +30,19 @@
             <option value="keine Angabe">Keine Angabe</option>
           </select>
         </label>
-        <div class="field">
-          <input type="text" name="occupation" aria-label="Beruf" required />
-        </div>
         <label>
           Höchster Bildungsabschluss
-          <input type="text" name="education" required />
+          <select name="education" required>
+            <option value="" disabled selected>Bitte wählen</option>
+            <option value="Kein Abschluss">Kein Abschluss</option>
+            <option value="Hauptschulabschluss">Hauptschulabschluss</option>
+            <option value="Realschulabschluss">Realschulabschluss</option>
+            <option value="Fachhochschulreife">Fachhochschulreife</option>
+            <option value="Abitur">Abitur</option>
+            <option value="Bachelor">Bachelor</option>
+            <option value="Master">Master</option>
+            <option value="Promotion">Promotion</option>
+          </select>
         </label>
       </section>
 
