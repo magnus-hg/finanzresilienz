@@ -58,6 +58,13 @@ label {
   font-weight: 600;
 }
 
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
 input,
 select,
 button {
@@ -70,7 +77,13 @@ select {
   border-radius: 8px;
   border: 1px solid var(--border);
   background: #fff;
+  color: var(--fg);
   transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+select option {
+  color: var(--fg);
+  background-color: #fff;
 }
 
 input:focus,

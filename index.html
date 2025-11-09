@@ -20,9 +20,8 @@
           Alter
           <input type="number" name="age" min="0" required />
         </label>
-        <label>
-          Familienstand
-          <select name="maritalStatus" required>
+        <div class="field">
+          <select name="maritalStatus" aria-label="Familienstand" required>
             <option value="" disabled selected>Bitte wählen</option>
             <option value="ledig">Ledig</option>
             <option value="verheiratet">Verheiratet</option>
@@ -31,7 +30,7 @@
             <option value="eingetragene Partnerschaft">Eingetragene Partnerschaft</option>
             <option value="andere">Andere</option>
           </select>
-        </label>
+        </div>
         <label>
           Geschlecht
           <select name="gender" required>
@@ -42,10 +41,9 @@
             <option value="keine Angabe">Keine Angabe</option>
           </select>
         </label>
-        <label>
-          Beruf
-          <input type="text" name="occupation" required />
-        </label>
+        <div class="field">
+          <input type="text" name="occupation" aria-label="Beruf" required />
+        </div>
         <label>
           Höchster Bildungsabschluss
           <input type="text" name="education" required />
