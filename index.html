@@ -31,7 +31,7 @@
           <input type="number" id="age" name="age" min="18" max="100" required />
         </div>
         <div class="field">
-          <label for="income">Verfügbares Einkommen pro Monat (EUR)</label>
+          <label for="income">Mögliche Monatliche Sparrate (EUR)</label>
           <input type="number" id="income" name="income" min="0" step="50" required />
         </div>
         <button type="submit" class="primary">Entwicklung berechnen</button>
@@ -57,7 +57,10 @@
           <h2>Vermögensentwicklung</h2>
           <p class="muted">Jährliche Wertentwicklung inkl. 8&nbsp;% Rendite.</p>
         </div>
-        <span id="final-wealth" class="badge">–</span>
+        <div class="badge-group">
+          <span id="invested-wealth" class="badge">–</span>
+          <span id="final-wealth" class="badge">–</span>
+        </div>
       </div>
       <canvas id="wealth-chart" aria-label="Diagramm Vermögensentwicklung"></canvas>
       <p class="chart-note muted">

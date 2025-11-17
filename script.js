@@ -7,6 +7,7 @@ const incomeInput = document.getElementById('income');
 const yearsOutput = document.getElementById('years-to-retirement');
 const annualInvestmentOutput = document.getElementById('annual-investment');
 const finalWealthOutput = document.getElementById('final-wealth');
+const investedWealthOutput = document.getElementById('invested-wealth');
 const chartCanvas = document.getElementById('wealth-chart');
 
 const currencyFormatter = new Intl.NumberFormat('de-DE', {
@@ -32,15 +33,32 @@ function calculateProjection(age, monthlyIncome) {
     });
   }
 
-  return { yearsToRetirement, annualContribution, dataPoints, finalWealth: wealth };
+  const totalInvested = annualContribution * yearsToRetirement;
+
+  return {
+    yearsToRetirement,
+    annualContribution,
+    dataPoints,
+    finalWealth: wealth,
+    totalInvested,
+  };
 }
 
-function updateOutputs({ yearsToRetirement, annualContribution, finalWealth }) {
+function updateOutputs({
+  yearsToRetirement,
+  annualContribution,
+  finalWealth,
+  totalInvested,
+}) {
   yearsOutput.textContent = yearsToRetirement ? yearsToRetirement : '0';
   annualInvestmentOutput.textContent = currencyFormatter.format(annualContribution);
   finalWealthOutput.textContent =
     typeof finalWealth === 'number'
       ? `Endvermögen: ${currencyFormatter.format(finalWealth)}`
+      : '–';
+  investedWealthOutput.textContent =
+    typeof totalInvested === 'number'
+      ? `Investiertes Vermögen: ${currencyFormatter.format(totalInvested)}`
       : '–';
 }
 
@@ -111,6 +129,7 @@ function handleFormSubmit(event) {
     annualInvestmentOutput.textContent = currencyFormatter.format(income * 12);
     finalWealthOutput.textContent =
       'Sie haben das Rentenalter bereits erreicht. Keine Projektion verfügbar.';
+    investedWealthOutput.textContent = 'Investiertes Vermögen: –';
     if (wealthChart) {
       wealthChart.data.labels = [];
       wealthChart.data.datasets[0].data = [];
