@@ -173,6 +173,46 @@ canvas {
   max-height: 420px;
 }
 
+.broker-section {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.broker-intro {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--muted);
+}
+
+.broker-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.broker-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.broker-button:hover,
+.broker-button:focus-visible {
+  background: rgba(47, 129, 247, 0.2);
+  transform: translateY(-1px);
+}
+
 @media (max-width: 600px) {
   body {
     padding: 1rem;
