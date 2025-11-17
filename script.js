@@ -1,187 +1,127 @@
-const form = document.getElementById('survey-form');
-const steps = Array.from(document.querySelectorAll('.step'));
-const nextBtn = document.getElementById('next');
-const prevBtn = document.getElementById('prev');
-const addIncomeBtn = document.getElementById('add-income');
-const incomeList = document.getElementById('income-list');
-const incomeTemplate = document.getElementById('income-template');
-const downloadBtn = document.getElementById('download');
-const summaryIncomeTotal = document.getElementById('summary-income-total');
-const summaryNetIncome = document.getElementById('summary-net-income');
-const summaryLiquidWealth = document.getElementById('summary-liquid-wealth');
-const summaryIlliquidWealth = document.getElementById('summary-illiquid-wealth');
-const summaryWealthTotal = document.getElementById('summary-wealth-total');
+const RETIREMENT_AGE = 67;
+const RETURN_RATE = 0.08;
 
-let currentStep = 0;
+const form = document.getElementById('projection-form');
+const ageInput = document.getElementById('age');
+const incomeInput = document.getElementById('income');
+const yearsOutput = document.getElementById('years-to-retirement');
+const annualInvestmentOutput = document.getElementById('annual-investment');
+const finalWealthOutput = document.getElementById('final-wealth');
+const chartCanvas = document.getElementById('wealth-chart');
 
 const currencyFormatter = new Intl.NumberFormat('de-DE', {
   style: 'currency',
   currency: 'EUR',
-  maximumFractionDigits: 2,
+  maximumFractionDigits: 0,
 });
 
-function showStep(index) {
-  steps.forEach((step, i) => {
-    step.classList.toggle('active', i === index);
-  });
+let wealthChart;
 
-  prevBtn.disabled = index === 0;
-  nextBtn.textContent = index === steps.length - 1 ? 'Fertig' : 'Weiter';
+function calculateProjection(age, monthlyIncome) {
+  const yearsToRetirement = Math.max(RETIREMENT_AGE - age, 0);
+  const annualContribution = monthlyIncome * 12;
+  const dataPoints = [];
 
-  if (index === steps.length - 1) {
-    updateSummary();
-  }
-}
-
-function validateCurrentStep() {
-  const currentSection = steps[currentStep];
-  const inputs = Array.from(currentSection.querySelectorAll('input, select'));
-
-  return inputs.every((input) => {
-    if (input.type === 'number') {
-      if (input.value === '') {
-        input.reportValidity();
-        return false;
-      }
-    }
-    if (!input.checkValidity()) {
-      input.reportValidity();
-      return false;
-    }
-    return true;
-  });
-}
-
-function gatherIncomeData() {
-  return Array.from(incomeList.querySelectorAll('.income-item')).map((item) => ({
-    description: item.querySelector('input[name="incomeDescription"]').value,
-    type: item.querySelector('select[name="incomeType"]').value,
-    hoursPerMonth: parseFloat(item.querySelector('input[name="incomeHours"]').value),
-    monthlyIncome: parseFloat(item.querySelector('input[name="incomeAmount"]').value),
-  }));
-}
-
-function gatherFormData() {
-  const data = new FormData(form);
-  const personalInfo = {
-    age: Number(data.get('age')),
-    gender: data.get('gender'),
-    education: data.get('education'),
-  };
-
-  const incomes = gatherIncomeData();
-
-  const expenses = {
-    monthlyExpenses: Number(data.get('expenses')),
-  };
-
-  const assets = {
-    cash: Number(data.get('cash')),
-    bank: Number(data.get('bank')),
-    singleStocks: Number(data.get('stocks')),
-    etfs: Number(data.get('etfs')),
-    realEstate: Number(data.get('realEstate')),
-    other: Number(data.get('otherAssets')),
-  };
-
-  return {
-    personalInfo,
-    incomes,
-    expenses,
-    assets,
-    generatedAt: new Date().toISOString(),
-  };
-}
-
-function updateSummary() {
-  const data = gatherFormData();
-  const totalIncome = data.incomes.reduce((sum, income) => sum + income.monthlyIncome, 0);
-  const totalExpenses = data.expenses.monthlyExpenses;
-  const netIncome = totalIncome - totalExpenses;
-  const liquidWealth =
-    data.assets.cash + data.assets.bank + data.assets.singleStocks + data.assets.etfs;
-  const illiquidWealth = data.assets.realEstate;
-  const totalWealth = Object.values(data.assets).reduce((sum, value) => sum + value, 0);
-
-  summaryIncomeTotal.textContent = currencyFormatter.format(totalIncome);
-  summaryNetIncome.textContent = currencyFormatter.format(netIncome);
-  summaryLiquidWealth.textContent = currencyFormatter.format(liquidWealth);
-  summaryIlliquidWealth.textContent = currencyFormatter.format(illiquidWealth);
-  summaryWealthTotal.textContent = currencyFormatter.format(totalWealth);
-}
-
-function createIncomeItem() {
-  const clone = incomeTemplate.content.cloneNode(true);
-  const item = clone.querySelector('.income-item');
-  const removeBtn = item.querySelector('.remove');
-
-  removeBtn.addEventListener('click', () => {
-    item.remove();
-  });
-
-  incomeList.appendChild(clone);
-}
-
-addIncomeBtn.addEventListener('click', () => {
-  createIncomeItem();
-});
-
-nextBtn.addEventListener('click', () => {
-  if (!validateCurrentStep()) {
-    return;
+  let wealth = 0;
+  for (let year = 1; year <= yearsToRetirement; year += 1) {
+    wealth = (wealth + annualContribution) * (1 + RETURN_RATE);
+    dataPoints.push({
+      label: `Alter ${age + year}`,
+      year,
+      wealth,
+    });
   }
 
-  if (currentStep < steps.length - 1) {
-    currentStep += 1;
-    showStep(currentStep);
+  return { yearsToRetirement, annualContribution, dataPoints, finalWealth: wealth };
+}
+
+function updateOutputs({ yearsToRetirement, annualContribution, finalWealth }) {
+  yearsOutput.textContent = yearsToRetirement ? yearsToRetirement : '0';
+  annualInvestmentOutput.textContent = currencyFormatter.format(annualContribution);
+  finalWealthOutput.textContent =
+    typeof finalWealth === 'number'
+      ? `Endvermögen: ${currencyFormatter.format(finalWealth)}`
+      : '–';
+}
+
+function updateChart(dataPoints) {
+  const labels = dataPoints.map((point) => `Jahr ${point.year}`);
+  const data = dataPoints.map((point) => Number(point.wealth.toFixed(2)));
+
+  if (!wealthChart) {
+    wealthChart = new Chart(chartCanvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Prognostiziertes Vermögen',
+            data,
+            borderColor: '#2f81f7',
+            backgroundColor: 'rgba(47, 129, 247, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.25,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            ticks: {
+              callback: (value) => `${value.toLocaleString('de-DE')} €`,
+            },
+            grid: { color: 'rgba(240, 246, 252, 0.08)' },
+          },
+          x: {
+            grid: { display: false },
+          },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) =>
+                `Vermögen: ${currencyFormatter.format(context.parsed.y)}`,
+            },
+          },
+        },
+      },
+    });
   } else {
-    const incomes = gatherIncomeData();
-    if (incomes.length === 0) {
-      alert('Bitte fügen Sie mindestens eine Einkommensquelle hinzu.');
-      currentStep = 1;
-      showStep(currentStep);
-      return;
-    }
-    alert('Sie können nun die Daten als JSON herunterladen.');
+    wealthChart.data.labels = labels;
+    wealthChart.data.datasets[0].data = data;
+    wealthChart.update();
   }
-});
+}
 
-prevBtn.addEventListener('click', () => {
-  if (currentStep > 0) {
-    currentStep -= 1;
-    showStep(currentStep);
-  }
-});
-
-form.addEventListener('submit', (event) => {
+function handleFormSubmit(event) {
   event.preventDefault();
-});
+  const age = Number(ageInput.value);
+  const income = Number(incomeInput.value);
 
-downloadBtn.addEventListener('click', () => {
-  if (!validateCurrentStep()) {
+  if (!Number.isFinite(age) || !Number.isFinite(income) || age <= 0 || income < 0) {
+    alert('Bitte geben Sie gültige Werte für Alter und Einkommen ein.');
     return;
   }
 
-  const incomes = gatherIncomeData();
-  if (incomes.length === 0) {
-    alert('Bitte fügen Sie mindestens eine Einkommensquelle hinzu.');
-    currentStep = 1;
-    showStep(currentStep);
+  if (age >= RETIREMENT_AGE) {
+    yearsOutput.textContent = '0';
+    annualInvestmentOutput.textContent = currencyFormatter.format(income * 12);
+    finalWealthOutput.textContent =
+      'Sie haben das Rentenalter bereits erreicht. Keine Projektion verfügbar.';
+    if (wealthChart) {
+      wealthChart.data.labels = [];
+      wealthChart.data.datasets[0].data = [];
+      wealthChart.update();
+    }
     return;
   }
 
-  const data = gatherFormData();
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'finanzielle-resilienz-umfrage.json';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-});
+  const projection = calculateProjection(age, income);
+  updateOutputs(projection);
+  updateChart(projection.dataPoints);
+}
 
-// Initialize
-showStep(currentStep);
-createIncomeItem();
+form.addEventListener('submit', handleFormSubmit);
