@@ -3,161 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Finanzielle Resilienz Umfrage</title>
+  <title>Finanzielle Resilienz – Rentenprojektion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main class="container">
     <header>
-      <h1>Finanzielle Resilienz Umfrage</h1>
-      <p>Bitte füllen Sie die folgenden Abschnitte aus.</p>
+      <p class="eyebrow">Finanzielle Resilienz</p>
+      <h1>Wie entwickelt sich Ihr Vermögen bis zur Rente?</h1>
+      <p>
+        Geben Sie Ihr aktuelles Alter und den monatlich verfügbaren Betrag ein. Wir
+        berechnen daraus die Jahre bis zur Rente und simulieren, wie Ihr Vermögen
+        bei 8&nbsp;% jährlicher Rendite wächst.
+      </p>
     </header>
 
-    <form id="survey-form">
-      <section class="step active" data-step="1">
-        <h2>Persönliche Informationen</h2>
-        <label>
-          Alter
-          <input type="number" name="age" min="0" max="120" required />
-        </label>
-        <label>
-          Geschlecht
-          <select name="gender" required>
-            <option value="" disabled selected>Bitte wählen</option>
-            <option value="weiblich">Weiblich</option>
-            <option value="männlich">Männlich</option>
-            <option value="divers">Divers</option>
-            <option value="keine Angabe">Keine Angabe</option>
-          </select>
-        </label>
-        <label>
-          Höchster Bildungsabschluss
-          <select name="education" required>
-            <option value="" disabled selected>Bitte wählen</option>
-            <option value="Kein Abschluss">Kein Abschluss</option>
-            <option value="Hauptschulabschluss">Hauptschulabschluss</option>
-            <option value="Realschulabschluss">Realschulabschluss</option>
-            <option value="Fachhochschulreife">Fachhochschulreife</option>
-            <option value="Abitur">Abitur</option>
-            <option value="Bachelor">Bachelor</option>
-            <option value="Master">Master</option>
-            <option value="Promotion">Promotion</option>
-          </select>
-        </label>
-      </section>
-
-      <section class="step" data-step="2">
-        <h2>Einnahmen</h2>
-        <p>Fügen Sie alle relevanten Einkommensquellen hinzu.</p>
-        <div id="income-list"></div>
-        <button type="button" id="add-income" class="secondary">Einkommensquelle hinzufügen</button>
-      </section>
-
-      <section class="step" data-step="3">
-        <h2>Ausgaben</h2>
-        <label>
-          Monatliche Ausgaben (EUR)
-          <input type="number" name="expenses" min="0" step="0.01" required />
-        </label>
-      </section>
-
-      <section class="step" data-step="4">
-        <h2>Vermögen</h2>
-        <label>
-          Barvermögen (EUR)
-          <input type="number" name="cash" min="0" step="0.01" required />
-        </label>
-        <label>
-          Bankvermögen (EUR)
-          <input type="number" name="bank" min="0" step="0.01" required />
-        </label>
-        <label>
-          Vermögen Einzelaktien (EUR)
-          <input type="number" name="stocks" min="0" step="0.01" required />
-        </label>
-        <label>
-          Vermögen in ETFs (EUR)
-          <input type="number" name="etfs" min="0" step="0.01" required />
-        </label>
-        <label>
-          Vermögen in Immobilien (EUR)
-          <input type="number" name="realEstate" min="0" step="0.01" required />
-        </label>
-        <label>
-          Sonstiges Vermögen (EUR)
-          <input type="number" name="otherAssets" min="0" step="0.01" required />
-        </label>
-      </section>
-
-      <section class="step" data-step="5">
-        <h2>Auswertung</h2>
-        <p>
-          Zusammenfassung Ihrer Angaben zu Einnahmen, Ausgaben und Vermögen.
-        </p>
-        <div class="summary-grid">
-          <article class="summary-card">
-            <h3>Gesamteinnahmen</h3>
-            <p id="summary-income-total" class="summary-value">–</p>
-          </article>
-          <article class="summary-card">
-            <h3>Einnahmen abzüglich Ausgaben</h3>
-            <p id="summary-net-income" class="summary-value">–</p>
-          </article>
-          <article class="summary-card">
-            <h3>Liquides Vermögen</h3>
-            <p id="summary-liquid-wealth" class="summary-value">–</p>
-          </article>
-          <article class="summary-card">
-            <h3>Illiquides Vermögen</h3>
-            <p id="summary-illiquid-wealth" class="summary-value">–</p>
-          </article>
-          <article class="summary-card">
-            <h3>Gesamtvermögen</h3>
-            <p id="summary-wealth-total" class="summary-value">–</p>
-          </article>
+    <section class="card">
+      <form id="projection-form" novalidate>
+        <div class="field">
+          <label for="age">Alter</label>
+          <input type="number" id="age" name="age" min="18" max="100" required />
         </div>
-        <button type="button" id="download" class="primary">JSON herunterladen</button>
-      </section>
+        <div class="field">
+          <label for="income">Verfügbares Einkommen pro Monat (EUR)</label>
+          <input type="number" id="income" name="income" min="0" step="50" required />
+        </div>
+        <button type="submit" class="primary">Entwicklung berechnen</button>
+      </form>
+    </section>
 
-      <div class="navigation">
-        <button type="button" id="prev" class="secondary">Zurück</button>
-        <button type="button" id="next" class="primary">Weiter</button>
+    <section class="results-grid">
+      <article class="card highlight">
+        <h2>Jahre bis zur Rente</h2>
+        <p id="years-to-retirement" class="value">–</p>
+        <p class="muted">Ausgehend von einem Renteneintritt mit 67 Jahren.</p>
+      </article>
+      <article class="card">
+        <h2>Jährlicher Anlagebetrag</h2>
+        <p id="annual-investment" class="value">–</p>
+        <p class="muted">Berechnet aus Ihrem monatlich verfügbaren Einkommen.</p>
+      </article>
+    </section>
+
+    <section class="card chart-card">
+      <div class="chart-header">
+        <div>
+          <h2>Vermögensentwicklung</h2>
+          <p class="muted">Jährliche Wertentwicklung inkl. 8&nbsp;% Rendite.</p>
+        </div>
+        <span id="final-wealth" class="badge">–</span>
       </div>
-    </form>
+      <canvas id="wealth-chart" aria-label="Diagramm Vermögensentwicklung"></canvas>
+      <p class="chart-note muted">
+        Die Berechnung nimmt an, dass Ihr verfügbarer Betrag einmal pro Jahr investiert und das
+        gesamte Vermögen jedes Jahr um 8&nbsp;% wächst.
+      </p>
+    </section>
   </main>
 
-  <template id="income-template">
-    <fieldset class="income-item">
-      <legend>Einkommensquelle</legend>
-      <label>
-        Beschreibung / Rolle
-        <input type="text" name="incomeDescription" required />
-      </label>
-      <label>
-        Einkunftsart
-        <select name="incomeType" required>
-          <option value="" disabled selected>Bitte wählen</option>
-          <option value="Land- und Forstwirtschaft">Land- und Forstwirtschaft</option>
-          <option value="Gewerbebetrieb">Gewerbebetrieb</option>
-          <option value="Selbstständige Arbeit">Selbstständige Arbeit</option>
-          <option value="Nichtselbstständige Arbeit">Nichtselbstständige Arbeit</option>
-          <option value="Kapitalvermögen">Kapitalvermögen</option>
-          <option value="Vermietung und Verpachtung">Vermietung und Verpachtung</option>
-          <option value="Sonstige Einkünfte">Sonstige Einkünfte</option>
-        </select>
-      </label>
-      <label>
-        Arbeitsstunden pro Monat
-        <input type="number" name="incomeHours" min="0" step="0.1" required />
-      </label>
-      <label>
-        Monatliches Einkommen (EUR)
-        <input type="number" name="incomeAmount" min="0" step="0.01" required />
-      </label>
-      <button type="button" class="remove secondary">Entfernen</button>
-    </fieldset>
-  </template>
-
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" integrity="sha384-bz8pFB70dNDO7xjoMnIKh4j/wcgUp3NEPoPFcAckU4iigFsMghvYDn8ApX2HFqRS" crossorigin="anonymous"></script>
   <script src="script.js"></script>
 </body>
 </html>
