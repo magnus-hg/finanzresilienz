@@ -148,6 +148,13 @@ button:hover {
   align-items: center;
 }
 
+.badge-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .badge {
   background: rgba(47, 129, 247, 0.2);
   color: var(--accent-strong);
