@@ -22,6 +22,7 @@ function calculateProjection(age, monthlyIncome) {
   const yearsToRetirement = Math.max(RETIREMENT_AGE - age, 0);
   const annualContribution = monthlyIncome * 12;
   const dataPoints = [];
+  const currentYear = new Date().getFullYear();
 
   let wealth = 0;
   for (let year = 1; year <= yearsToRetirement; year += 1) {
@@ -29,6 +30,7 @@ function calculateProjection(age, monthlyIncome) {
     dataPoints.push({
       label: `Alter ${age + year}`,
       year,
+      calendarYear: currentYear + year,
       wealth,
     });
   }
@@ -63,7 +65,7 @@ function updateOutputs({
 }
 
 function updateChart(dataPoints) {
-  const labels = dataPoints.map((point) => `Jahr ${point.year}`);
+  const labels = dataPoints.map((point) => `${point.calendarYear}`);
   const data = dataPoints.map((point) => Number(point.wealth.toFixed(2)));
 
   if (!wealthChart) {
