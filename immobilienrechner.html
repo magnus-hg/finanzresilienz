@@ -74,6 +74,59 @@
         </p>
       </section>
 
+      <section class="card" id="housing-search">
+        <h2>Passende Objekte finden</h2>
+        <p class="muted">
+          Nachdem wir den maximalen Kaufpreis berechnet haben, können Sie hier direkt nach passenden
+          Angeboten bei Immobilienscout24 suchen.
+        </p>
+        <form id="housing-search-form" novalidate>
+          <div class="field">
+            <label for="housing-max-price">Maximaler Kaufpreis (EUR)</label>
+            <input
+              type="text"
+              id="housing-max-price"
+              name="housing-max-price"
+              placeholder="Bitte zuerst die Finanzierbarkeit berechnen"
+              readonly
+            />
+            <p class="muted" id="housing-price-hint">
+              Der Maximalpreis wird automatisch aus Ihrer letzten Berechnung übernommen.
+            </p>
+          </div>
+          <div class="field">
+            <label for="housing-location">Ort oder Adresse</label>
+            <input
+              type="text"
+              id="housing-location"
+              name="housing-location"
+              placeholder="z. B. Freiburg im Breisgau"
+              disabled
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="housing-radius">Suchradius (km)</label>
+            <input
+              type="number"
+              id="housing-radius"
+              name="housing-radius"
+              min="1"
+              max="50"
+              step="1"
+              value="5"
+              disabled
+            />
+          </div>
+          <button type="submit" id="housing-search-submit" class="primary" disabled>
+            Immobilienscout24 öffnen
+          </button>
+        </form>
+        <p class="muted" id="housing-search-message">
+          Berechnen Sie zunächst den maximalen Kaufpreis, um die Wohnungssuche zu starten.
+        </p>
+      </section>
+
       <section class="next-steps">
         <h2>Nächste Schritte</h2>
         <div class="next-steps-grid">
