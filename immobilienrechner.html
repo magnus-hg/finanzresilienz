@@ -18,10 +18,10 @@
         <p class="eyebrow">Meine Finanzanalyse</p>
         <h1>Kann ich mir eine Immobilie leisten?</h1>
         <p>
-          Wir berechnen, ob Ihre gewünschte Monatsrate ausreicht, um eine
-          Immobilie inklusive 10,5&nbsp;% Nebenkosten zu finanzieren. Wählen Sie
-          Ihren gewünschten Kaufpreis unten (Standard 500.000&nbsp;€) – wir
-          rechnen mit 1&nbsp;% Tilgung p.a. und 4&nbsp;% Zins p.a.
+          Wir berechnen, welchen Immobilienpreis Sie sich leisten können. Aus
+          Ihrer monatlichen Rate und Ihrem Vermögen bestimmen wir das mögliche
+          Darlehen (1&nbsp;% Tilgung p.a., 4&nbsp;% Zins p.a.) sowie den maximalen
+          Objektpreis ohne 10,5&nbsp;% Nebenkosten.
         </p>
         <p>
           <a class="broker-button" style="width:auto" href="index.html">← Zurück zur Vermögensentwicklung</a>
@@ -42,47 +42,35 @@
             />
           </div>
           <div class="field">
-            <label for="property-price">Preis der Immobilie (EUR)</label>
-            <input
-              type="number"
-              id="property-price"
-              name="property-price"
-              min="50000"
-              step="10000"
-              value="500000"
-              required
-            />
-          </div>
-          <div class="field">
             <label for="assets">Vermögen (EUR)</label>
             <input type="number" id="assets" name="assets" min="0" step="1000" required />
           </div>
-          <button type="submit" class="primary">Finanzierbarkeit berechnen</button>
+          <button type="submit" class="primary">Bezahlbaren Preis berechnen</button>
         </form>
       </section>
 
       <section class="results-grid">
         <article class="card highlight">
-          <h2>Gesamtkosten</h2>
+          <h2>Maximaler Immobilienpreis</h2>
           <p id="total-cost" class="value">–</p>
-          <p class="muted">Ihr Kaufpreis inklusive 10,5&nbsp;% Nebenkosten.</p>
+          <p class="muted">Immobilienpreis ohne 10,5&nbsp;% Nebenkosten.</p>
         </article>
         <article class="card">
-          <h2>Benötigtes Darlehen</h2>
+          <h2>Mögliches Darlehen</h2>
           <p id="loan-amount" class="value">–</p>
-          <p class="muted">Gesamtkosten minus Ihr Vermögen.</p>
+          <p class="muted">Berechnet aus Rate, Zins und Tilgung.</p>
         </article>
         <article class="card">
-          <h2>Ermittelte Monatsrate</h2>
+          <h2>Bezahlbare Gesamtkosten</h2>
           <p id="calculated-rate" class="value">–</p>
-          <p class="muted">Auf Basis von 1&nbsp;% Tilgung und 4&nbsp;% Zins.</p>
+          <p class="muted">Mögliches Darlehen plus Ihr Vermögen.</p>
         </article>
       </section>
 
       <section id="result-card" class="card result-card">
         <h2>Finanzierbarkeit</h2>
         <p id="affordability-message" class="muted">
-          Füllen Sie das Formular aus, um zu sehen, ob die Immobilie in Ihr Budget passt.
+          Füllen Sie das Formular aus, um zu sehen, wie hoch Ihr maximaler Immobilienpreis ist.
         </p>
       </section>
 
