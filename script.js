@@ -10,6 +10,29 @@ const finalWealthOutput = document.getElementById('final-wealth');
 const investedWealthOutput = document.getElementById('invested-wealth');
 const chartCanvas = document.getElementById('wealth-chart');
 
+const savedUserData = window.userDataStore ? userDataStore.load() : {};
+
+function populateInitialValues() {
+  if (typeof savedUserData.age === 'number') {
+    ageInput.value = savedUserData.age;
+  }
+  if (typeof savedUserData.monthlyRate === 'number') {
+    incomeInput.value = savedUserData.monthlyRate;
+  }
+}
+
+function persistNumberInput(input, key) {
+  if (!input) return;
+  input.addEventListener('input', () => {
+    const value = input.value === '' ? null : Number(input.value);
+    userDataStore.save({ [key]: value });
+  });
+}
+
+populateInitialValues();
+persistNumberInput(ageInput, 'age');
+persistNumberInput(incomeInput, 'monthlyRate');
+
 const currencyFormatter = new Intl.NumberFormat('de-DE', {
   style: 'currency',
   currency: 'EUR',
@@ -116,14 +139,15 @@ function updateChart(dataPoints) {
   }
 }
 
-function handleFormSubmit(event) {
-  event.preventDefault();
-  const age = Number(ageInput.value);
-  const income = Number(incomeInput.value);
+function runProjection(age, income, { silent = false } = {}) {
+  const hasValidValues =
+    Number.isFinite(age) && Number.isFinite(income) && age > 0 && income >= 0;
 
-  if (!Number.isFinite(age) || !Number.isFinite(income) || age <= 0 || income < 0) {
-    alert('Bitte geben Sie gültige Werte für Alter und Einkommen ein.');
-    return;
+  if (!hasValidValues) {
+    if (!silent) {
+      alert('Bitte geben Sie gültige Werte für Alter und Einkommen ein.');
+    }
+    return false;
   }
 
   if (age >= RETIREMENT_AGE) {
@@ -137,12 +161,32 @@ function handleFormSubmit(event) {
       wealthChart.data.datasets[0].data = [];
       wealthChart.update();
     }
-    return;
+    return true;
   }
 
   const projection = calculateProjection(age, income);
   updateOutputs(projection);
   updateChart(projection.dataPoints);
+  return true;
+}
+
+function handleFormSubmit(event) {
+  event.preventDefault();
+  const age = Number(ageInput.value);
+  const income = Number(incomeInput.value);
+
+  if (!runProjection(age, income)) {
+    return;
+  }
+
+  userDataStore.save({ age, monthlyRate: income });
+}
+
+const hasPrefilledValues = ageInput.value !== '' && incomeInput.value !== '';
+if (hasPrefilledValues) {
+  const initialAge = Number(ageInput.value);
+  const initialIncome = Number(incomeInput.value);
+  runProjection(initialAge, initialIncome, { silent: true });
 }
 
 form.addEventListener('submit', handleFormSubmit);
