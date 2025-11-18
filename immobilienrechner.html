@@ -31,17 +31,6 @@
       <section class="card">
         <form id="mortgage-form" novalidate>
           <div class="field">
-            <label for="mortgage-age">Aktuelles Alter</label>
-            <input
-              type="number"
-              id="mortgage-age"
-              name="mortgage-age"
-              min="18"
-              max="100"
-              required
-            />
-          </div>
-          <div class="field">
             <label for="mortgage-budget">Verfügbare monatliche Rate (EUR)</label>
             <input
               type="number"
@@ -90,11 +79,41 @@
         </article>
       </section>
 
-      <section class="card">
+      <section id="result-card" class="card result-card">
         <h2>Finanzierbarkeit</h2>
         <p id="affordability-message" class="muted">
           Füllen Sie das Formular aus, um zu sehen, ob die Immobilie in Ihr Budget passt.
         </p>
+      </section>
+
+      <section class="next-steps">
+        <h2>Nächste Schritte</h2>
+        <div class="next-steps-grid">
+          <article class="next-step-column">
+            <h3 class="column-title">Finanzierungsanbieter</h3>
+            <div class="broker-buttons">
+              <a class="broker-button" href="#">interhyp</a>
+              <a class="broker-button" href="#">BAUFI24</a>
+              <a class="broker-button" href="#">Dr. Klein</a>
+              <a class="broker-button" href="#">Hüttig &amp; Rompf</a>
+              <a class="broker-button" href="#">Hypofriend</a>
+            </div>
+          </article>
+          <article class="next-step-column">
+            <h3 class="column-title">Weitere Berechnungen</h3>
+            <p class="muted">
+              Finden Sie heraus, ob sich ein Eigenheim für Sie mehr lohnt als eine Mietwohnung.
+            </p>
+            <a class="broker-button" href="#">Lohnt sich für mich eine Mietwohnung oder ein Eigenheim?</a>
+          </article>
+          <article class="next-step-column">
+            <h3 class="column-title">Wohnungsangebot</h3>
+            <p class="muted">
+              Entdecken Sie verfügbare Wohnungen und Häuser in Ihrer Umgebung.
+            </p>
+            <a class="broker-button" href="#">Finde geeignete Wohnungen in meiner Gegend</a>
+          </article>
+        </div>
       </section>
     </main>
 

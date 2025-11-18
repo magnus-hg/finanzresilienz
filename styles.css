@@ -69,6 +69,21 @@ header p {
   background: linear-gradient(135deg, rgba(47, 129, 247, 0.2), rgba(13, 148, 136, 0.2));
 }
 
+.result-card {
+  transition: background 0.3s ease, border-color 0.3s ease;
+  border-left: 6px solid transparent;
+}
+
+.result-card.result-positive {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.8);
+}
+
+.result-card.result-negative {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.9);
+}
+
 form {
   display: grid;
   gap: 1rem;
@@ -245,8 +260,8 @@ canvas {
   box-shadow: 0 8px 20px rgba(47, 129, 247, 0.3);
 }
 
-.next-step-column button {
-  width: 100%;
+.next-step-column a {
+  text-decoration: none;
 }
 
 @media (max-width: 600px) {
