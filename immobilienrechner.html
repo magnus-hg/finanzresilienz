@@ -19,9 +19,9 @@
         <h1>Kann ich mir eine Immobilie leisten?</h1>
         <p>
           Wir berechnen, ob Ihre gewünschte Monatsrate ausreicht, um eine
-          Immobilie im Wert von 500.000&nbsp;€ (4 Zimmer) inklusive 10,5&nbsp;%
-          Nebenkosten zu finanzieren. Die Annahmen: Tilgung 1&nbsp;% p.a. und
-          Zinssatz 4&nbsp;% p.a.
+          Immobilie inklusive 10,5&nbsp;% Nebenkosten zu finanzieren. Wählen Sie
+          Ihren gewünschten Kaufpreis unten (Standard 500.000&nbsp;€) – wir
+          rechnen mit 1&nbsp;% Tilgung p.a. und 4&nbsp;% Zins p.a.
         </p>
         <p>
           <a class="broker-button" style="width:auto" href="index.html">← Zurück zur Vermögensentwicklung</a>
@@ -53,6 +53,18 @@
             />
           </div>
           <div class="field">
+            <label for="property-price">Preis der Immobilie (EUR)</label>
+            <input
+              type="number"
+              id="property-price"
+              name="property-price"
+              min="50000"
+              step="10000"
+              value="500000"
+              required
+            />
+          </div>
+          <div class="field">
             <label for="assets">Vermögen (EUR)</label>
             <input type="number" id="assets" name="assets" min="0" step="1000" required />
           </div>
@@ -64,7 +76,7 @@
         <article class="card highlight">
           <h2>Gesamtkosten</h2>
           <p id="total-cost" class="value">–</p>
-          <p class="muted">500.000&nbsp;€ plus 10,5&nbsp;% Nebenkosten.</p>
+          <p class="muted">Ihr Kaufpreis inklusive 10,5&nbsp;% Nebenkosten.</p>
         </article>
         <article class="card">
           <h2>Benötigtes Darlehen</h2>
@@ -86,6 +98,7 @@
       </section>
     </main>
 
+    <script src="storage.js"></script>
     <script src="mortgage.js"></script>
   </body>
 </html>

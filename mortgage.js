@@ -1,11 +1,13 @@
-const PROPERTY_PRICE = 500000;
+const PROPERTY_DEFAULT_PRICE = 500000;
 const ADDITIONAL_COST_RATE = 0.105;
 const INTEREST_RATE = 0.04;
 const REPAYMENT_RATE = 0.01;
 
 const mortgageForm = document.getElementById('mortgage-form');
+const mortgageAgeInput = document.getElementById('mortgage-age');
 const budgetInput = document.getElementById('mortgage-budget');
 const assetsInput = document.getElementById('assets');
+const propertyPriceInput = document.getElementById('property-price');
 const totalCostOutput = document.getElementById('total-cost');
 const loanAmountOutput = document.getElementById('loan-amount');
 const calculatedRateOutput = document.getElementById('calculated-rate');
@@ -17,27 +19,93 @@ const currencyFormatter = new Intl.NumberFormat('de-DE', {
   maximumFractionDigits: 0,
 });
 
-const TOTAL_COST = PROPERTY_PRICE * (1 + ADDITIONAL_COST_RATE);
+const savedUserData = window.userDataStore ? userDataStore.load() : {};
 
-totalCostOutput.textContent = currencyFormatter.format(TOTAL_COST);
+function populateInitialValues() {
+  if (typeof savedUserData.age === 'number') {
+    mortgageAgeInput.value = savedUserData.age;
+  }
+  if (typeof savedUserData.monthlyRate === 'number') {
+    budgetInput.value = savedUserData.monthlyRate;
+  }
+  if (typeof savedUserData.assets === 'number') {
+    assetsInput.value = savedUserData.assets;
+  }
+  if (typeof savedUserData.propertyPrice === 'number' && savedUserData.propertyPrice > 0) {
+    propertyPriceInput.value = savedUserData.propertyPrice;
+  }
+}
+
+function getPropertyPrice() {
+  const value = Number(propertyPriceInput.value);
+  return Number.isFinite(value) && value > 0 ? value : PROPERTY_DEFAULT_PRICE;
+}
+
+function getTotalCost(price) {
+  return price * (1 + ADDITIONAL_COST_RATE);
+}
+
+function updateTotalCostDisplay() {
+  const totalCost = getTotalCost(getPropertyPrice());
+  totalCostOutput.textContent = currencyFormatter.format(totalCost);
+  return totalCost;
+}
+
+function persistNumberInput(input, key) {
+  if (!input) return;
+  input.addEventListener('input', () => {
+    const value = input.value === '' ? null : Number(input.value);
+    userDataStore.save({ [key]: value });
+  });
+}
+
+populateInitialValues();
+updateTotalCostDisplay();
+persistNumberInput(mortgageAgeInput, 'age');
+persistNumberInput(budgetInput, 'monthlyRate');
+persistNumberInput(assetsInput, 'assets');
+persistNumberInput(propertyPriceInput, 'propertyPrice');
+
+propertyPriceInput.addEventListener('input', () => {
+  updateTotalCostDisplay();
+});
 
 function handleMortgageSubmit(event) {
   event.preventDefault();
 
+  const age = Number(mortgageAgeInput.value);
   const budget = Number(budgetInput.value);
   const assets = Number(assetsInput.value);
+  const propertyPrice = getPropertyPrice();
 
-  if (!Number.isFinite(budget) || !Number.isFinite(assets) || budget < 0 || assets < 0) {
-    alert('Bitte geben Sie gültige Werte für Rate und Vermögen ein.');
+  const hasValidNumbers =
+    Number.isFinite(age) &&
+    Number.isFinite(budget) &&
+    Number.isFinite(assets) &&
+    age >= 18 &&
+    age <= 100 &&
+    budget >= 0 &&
+    assets >= 0;
+
+  if (!hasValidNumbers) {
+    alert('Bitte geben Sie gültige Werte für Alter, Rate, Vermögen und Kaufpreis ein.');
     return;
   }
 
-  const loanAmount = Math.max(TOTAL_COST - assets, 0);
+  const totalCost = getTotalCost(propertyPrice);
+  const loanAmount = Math.max(totalCost - assets, 0);
   const yearlyRate = INTEREST_RATE + REPAYMENT_RATE;
   const monthlyRate = loanAmount * yearlyRate / 12;
 
   loanAmountOutput.textContent = currencyFormatter.format(loanAmount);
   calculatedRateOutput.textContent = currencyFormatter.format(monthlyRate);
+
+  userDataStore.save({
+    age,
+    monthlyRate: budget,
+    assets,
+    propertyPrice,
+  });
 
   if (loanAmount === 0) {
     affordabilityMessage.textContent =
