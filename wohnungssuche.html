@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meine Finanzanalyse – Wohnungen finden</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <p class="eyebrow">Meine Finanzanalyse</p>
+        <h1>Finde geeignete Wohnungen in meiner Gegend</h1>
+        <p>
+          Nutzen Sie den maximalen Kaufpreis aus dem Immobilienrechner und wählen Sie einen Ort,
+          an dem Sie suchen möchten. Wir ermitteln automatisch die geografischen Koordinaten über
+          Nominatim und öffnen Immobilienscout24 mit dem passenden Filter.
+        </p>
+        <p>
+          <a class="broker-button" style="width:auto" href="immobilienrechner.html">← Zurück zum Immobilienrechner</a>
+        </p>
+      </header>
+
+      <section class="card">
+        <form id="housing-search-form" novalidate>
+          <div class="field">
+            <label for="max-price">Maximaler Kaufpreis (EUR)</label>
+            <input type="number" id="max-price" name="max-price" min="0" step="1000" required />
+            <p class="muted" id="price-hint">
+              Der Wert wird automatisch aus Ihrer letzten Berechnung übernommen und kann bei Bedarf angepasst werden.
+            </p>
+          </div>
+          <div class="field">
+            <label for="location-query">Ort oder Adresse</label>
+            <input
+              type="text"
+              id="location-query"
+              name="location-query"
+              placeholder="z. B. Freiburg im Breisgau"
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="search-radius">Suchradius (km)</label>
+            <input type="number" id="search-radius" name="search-radius" min="1" max="50" step="1" value="5" />
+          </div>
+          <button type="submit" class="primary">Immobilienscout24 öffnen</button>
+        </form>
+      </section>
+
+      <section class="card result-card" id="search-result">
+        <h2>Suchstatus</h2>
+        <p class="muted" id="search-message">
+          Tragen Sie einen Ort ein und klicken Sie auf „Immobilienscout24 öffnen“, um passende Angebote zu sehen.
+        </p>
+      </section>
+    </main>
+
+    <script src="storage.js"></script>
+    <script src="wohnungssuche.js"></script>
+  </body>
+</html>

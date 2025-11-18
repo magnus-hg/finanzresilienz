@@ -82,6 +82,7 @@ function handleMortgageSubmit(event) {
   userDataStore.save({
     monthlyRate: budget,
     assets,
+    maxPropertyPrice,
   });
 
   resultCard.classList.remove('result-positive', 'result-negative');
