@@ -143,13 +143,14 @@ function renderListings(listings, fallbackMessage, options = {}) {
 
     if (Number.isFinite(maxPropertyPrice)) {
       const affordable = property.price_eur <= maxPropertyPrice;
-      const affordability = document.createElement('span');
-      affordability.className = `listing-affordability ${affordable ? 'affordable' : 'not-affordable'}`;
-      affordability.textContent = affordable ? 'Leistbar' : 'Über Budget';
-      affordability.title = affordable
-        ? 'Preis liegt innerhalb Ihres maximalen Immobilienpreises'
-        : 'Preis übersteigt Ihren maximalen Immobilienpreis';
-      header.append(affordability);
+
+      if (!affordable) {
+        const affordability = document.createElement('span');
+        affordability.className = 'listing-affordability not-affordable';
+        affordability.textContent = 'Über Budget';
+        affordability.title = 'Preis übersteigt Ihren maximalen Immobilienpreis';
+        header.append(affordability);
+      }
     }
 
     details.append(header);
@@ -190,7 +191,7 @@ function renderListings(listings, fallbackMessage, options = {}) {
     const monthlyRate = Number(property.mortgage_monthly_rate);
     const loanAmount = Number(property.mortgage_loan_amount);
 
-    const payoffText = Number.isFinite(payoffYears) ? `${payoffYears} Jahre` : '–';
+    const payoffText = Number.isFinite(payoffYears) ? `${payoffYears} Jahren` : '–';
     const monthlyRateText = Number.isFinite(monthlyRate)
       ? currencyFormatter.format(Math.round(monthlyRate))
       : '–';
