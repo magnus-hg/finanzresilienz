@@ -108,26 +108,48 @@ def _build_property_payload(latitude: float, longitude: float, radius: float,
                             min_price: float, max_price: float,
                             min_size: float, max_size: float,
                             min_rooms: int, max_rooms: int,
-                            interest_rate: float, initial_tilgung_rate: float) -> List[dict]:
+                            interest_rate: float, initial_tilgung_rate: float,
+                            available_assets: float) -> List[dict]:
     properties = _generate_properties(30, latitude, longitude, radius)
     filtered = _filter_properties(properties, min_price, max_price, min_size, max_size, min_rooms, max_rooms)
     filtered.sort(key=lambda prop: prop.price_eur, reverse=True)
     return [
-        _serialize_property_with_mortgage(prop, interest_rate, initial_tilgung_rate)
+        _serialize_property_with_mortgage(
+            prop,
+            interest_rate,
+            initial_tilgung_rate,
+            available_assets,
+        )
         for prop in filtered
     ]
 
 
-def _serialize_property_with_mortgage(prop: Property, interest_rate: float, initial_tilgung_rate: float) -> dict:
-    schedule, total_interest, total_paid = mortgage_schedule(
-        prop.price_eur,
-        interest_rate,
-        initial_tilgung_rate,
-        MAX_AMORTIZATION_YEARS,
-    )
-    mortgage_years = len(schedule)
-    annual_annuity = prop.price_eur * (interest_rate + initial_tilgung_rate)
-    monthly_rate = annual_annuity / 12 if annual_annuity > 0 else 0
+def _serialize_property_with_mortgage(
+    prop: Property,
+    interest_rate: float,
+    initial_tilgung_rate: float,
+    available_assets: float,
+) -> dict:
+    usable_assets = max(available_assets, 0)
+    loan_amount = max(prop.price_eur - usable_assets, 0)
+
+    if loan_amount > 0:
+        schedule, total_interest, total_paid = mortgage_schedule(
+            loan_amount,
+            interest_rate,
+            initial_tilgung_rate,
+            MAX_AMORTIZATION_YEARS,
+        )
+        mortgage_years = len(schedule)
+        annual_annuity = loan_amount * (interest_rate + initial_tilgung_rate)
+        monthly_rate = annual_annuity / 12 if annual_annuity > 0 else 0
+    else:
+        schedule = []
+        total_interest = 0.0
+        total_paid = 0.0
+        mortgage_years = 0
+        monthly_rate = 0.0
+
     return {
         **asdict(prop),
         "price_per_sqm": prop.price_per_sqm,
@@ -138,6 +160,7 @@ def _serialize_property_with_mortgage(prop: Property, interest_rate: float, init
         "mortgage_monthly_rate": round(monthly_rate, 2),
         "mortgage_interest_rate": interest_rate,
         "mortgage_tilgung_rate": initial_tilgung_rate,
+        "mortgage_loan_amount": loan_amount,
     }
 
 
@@ -154,6 +177,7 @@ def list_properties():
     radius = max(_parse_float("radius", 5), 0.1)
     interest_rate = max(_parse_float("interest_rate", DEFAULT_INTEREST_RATE), 0.0)
     initial_tilgung_rate = max(_parse_float("tilgung_rate", DEFAULT_TILGUNG_RATE), 0.0001)
+    available_assets = max(_parse_float("available_assets", 0.0), 0.0)
 
     payload = _build_property_payload(
         latitude,
@@ -167,6 +191,7 @@ def list_properties():
         max_rooms,
         interest_rate,
         initial_tilgung_rate,
+        available_assets,
     )
     return jsonify({
         "properties": payload,
@@ -208,6 +233,7 @@ def _collect_average_price(latitude: float, longitude: float, radius: float,
             max_rooms,
             interest_rate,
             initial_tilgung_rate,
+            0.0,
         )
         for prop in payload:
             value = prop.get("price_per_sqm")
