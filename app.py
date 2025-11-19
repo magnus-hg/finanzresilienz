@@ -1,13 +1,10 @@
 import random
 from dataclasses import dataclass, asdict
-from pathlib import Path
 from typing import List, Optional, Tuple
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, render_template, request
 
-BASE_DIR = Path(__file__).resolve().parent
-
-app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
+app = Flask(__name__, static_folder="static", template_folder="templates")
 
 
 @dataclass
@@ -230,23 +227,19 @@ def average_rent():
     })
 
 
-def _serve_html(filename: str):
-    return send_from_directory(BASE_DIR, filename)
-
-
 @app.route("/")
 def home_page():
-    return _serve_html("index.html")
+    return render_template("index.html")
 
 
 @app.route("/immobilienrechner")
 def mortgage_page():
-    return _serve_html("immobilienrechner.html")
+    return render_template("immobilienrechner.html")
 
 
 @app.route("/wohnungssuche")
 def housing_page():
-    return _serve_html("wohnungssuche.html")
+    return render_template("wohnungssuche.html")
 
 
 if __name__ == "__main__":
