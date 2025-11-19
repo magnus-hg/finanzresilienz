@@ -2,7 +2,7 @@ const ADDITIONAL_COST_RATE = 0.105;
 const INTEREST_RATE = 0.04;
 const REPAYMENT_RATE = 0.01;
 const MARKET_RADIUS_KM = 8;
-const MAX_LISTINGS = 5;
+const MAX_LISTINGS = 10;
 const MOCK_LISTING_BASE_URL = 'https://www.immobilienscout24.de/expose';
 
 const mortgageForm = document.getElementById('mortgage-form');
@@ -86,7 +86,8 @@ function setAveragePriceDisplay(valueText) {
   }
 }
 
-function renderListings(listings, fallbackMessage) {
+function renderListings(listings, fallbackMessage, options = {}) {
+  const { maxPropertyPrice } = options;
   if (!listingResults) return;
   listingResults.innerHTML = '';
 
@@ -108,10 +109,26 @@ function renderListings(listings, fallbackMessage) {
     const item = document.createElement('li');
     item.className = 'listing-item';
 
+    const header = document.createElement('div');
+    header.className = 'listing-header';
+
     const price = document.createElement('p');
     price.className = 'listing-price';
     price.textContent = currencyFormatter.format(property.price_eur);
-    item.append(price);
+    header.append(price);
+
+    if (Number.isFinite(maxPropertyPrice)) {
+      const affordable = property.price_eur <= maxPropertyPrice;
+      const affordability = document.createElement('span');
+      affordability.className = `listing-affordability ${affordable ? 'affordable' : 'not-affordable'}`;
+      affordability.textContent = affordable ? 'Leistbar' : 'Über Budget';
+      affordability.title = affordable
+        ? 'Preis liegt innerhalb Ihres maximalen Immobilienpreises'
+        : 'Preis übersteigt Ihren maximalen Immobilienpreis';
+      header.append(affordability);
+    }
+
+    item.append(header);
 
     const address = document.createElement('p');
     address.className = 'listing-address';
@@ -270,15 +287,16 @@ async function updateMarketInsights({ postalCode, maxPropertyPrice, fromStorage 
       renderListings(
         [],
         'Keine passenden Beispielangebote gefunden. Bitte passen Sie Ihr Budget oder die PLZ an.',
+        { maxPropertyPrice },
       );
     } else {
-      renderListings(listings, '');
+      renderListings(listings, '', { maxPropertyPrice });
     }
   } catch (error) {
     console.error(error);
     setMarketInsightsMessage(error.message || 'Marktdaten konnten nicht geladen werden.');
     setAveragePriceDisplay('–');
-    renderListings([], 'Marktdaten konnten nicht geladen werden.');
+    renderListings([], 'Marktdaten konnten nicht geladen werden.', { maxPropertyPrice });
   }
 }
 

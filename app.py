@@ -102,6 +102,7 @@ def _build_property_payload(latitude: float, longitude: float, radius: float,
                             min_rooms: int, max_rooms: int) -> List[dict]:
     properties = _generate_properties(30, latitude, longitude, radius)
     filtered = _filter_properties(properties, min_price, max_price, min_size, max_size, min_rooms, max_rooms)
+    filtered.sort(key=lambda prop: prop.price_eur, reverse=True)
     return [
         {
             **asdict(prop),
