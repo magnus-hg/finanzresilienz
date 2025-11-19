@@ -45,6 +45,19 @@
             <label for="assets">Vermögen (EUR)</label>
             <input type="number" id="assets" name="assets" min="0" step="1000" required />
           </div>
+          <div class="field">
+            <label for="postal-code">Postleitzahl (PLZ)</label>
+            <input
+              type="text"
+              id="postal-code"
+              name="postal-code"
+              pattern="\d{5}"
+              inputmode="numeric"
+              placeholder="z. B. 79100"
+              required
+            />
+            <p class="muted">Wir nutzen die PLZ, um Durchschnittspreise in Ihrer Region zu berechnen.</p>
+          </div>
           <button type="submit" class="primary">Bezahlbaren Preis berechnen</button>
         </form>
       </section>
@@ -74,57 +87,22 @@
         </p>
       </section>
 
-      <section class="card" id="housing-search">
-        <h2>Passende Objekte finden</h2>
-        <p class="muted">
-          Nachdem wir den maximalen Kaufpreis berechnet haben, können Sie hier direkt nach passenden
-          Angeboten bei Immobilienscout24 suchen.
+      <section class="card market-insights" id="market-insights">
+        <h2>Marktüberblick für Ihre Region</h2>
+        <p class="muted" id="market-insights-message">
+          Berechnen Sie zuerst Ihre Finanzierbarkeit und geben Sie Ihre PLZ an, um Durchschnittspreise und Beispielobjekte zu sehen.
         </p>
-        <form id="housing-search-form" novalidate>
-          <div class="field">
-            <label for="housing-max-price">Maximaler Kaufpreis (EUR)</label>
-            <input
-              type="text"
-              id="housing-max-price"
-              name="housing-max-price"
-              placeholder="Bitte zuerst die Finanzierbarkeit berechnen"
-              readonly
-            />
-            <p class="muted" id="housing-price-hint">
-              Der Maximalpreis wird automatisch aus Ihrer letzten Berechnung übernommen.
-            </p>
+        <div class="market-metric">
+          <p class="muted">Ø Kaufpreis pro m²</p>
+          <p id="average-price-value" class="value">–</p>
+        </div>
+        <div class="listings">
+          <div class="listings-header">
+            <h3>Beispielangebote</h3>
+            <p class="muted" id="listings-message">Es wurden noch keine Immobilien berechnet.</p>
           </div>
-          <div class="field">
-            <label for="housing-location">Ort oder Adresse</label>
-            <input
-              type="text"
-              id="housing-location"
-              name="housing-location"
-              placeholder="z. B. Freiburg im Breisgau"
-              disabled
-              required
-            />
-          </div>
-          <div class="field">
-            <label for="housing-radius">Suchradius (km)</label>
-            <input
-              type="number"
-              id="housing-radius"
-              name="housing-radius"
-              min="1"
-              max="50"
-              step="1"
-              value="5"
-              disabled
-            />
-          </div>
-          <button type="submit" id="housing-search-submit" class="primary" disabled>
-            Immobilienscout24 öffnen
-          </button>
-        </form>
-        <p class="muted" id="housing-search-message">
-          Berechnen Sie zunächst den maximalen Kaufpreis, um die Wohnungssuche zu starten.
-        </p>
+          <ul class="listing-results" id="listing-results"></ul>
+        </div>
       </section>
 
       <section class="next-steps">
