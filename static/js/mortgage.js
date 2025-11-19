@@ -188,10 +188,14 @@ function renderListings(listings, fallbackMessage, options = {}) {
     const totalInterest = Number(property.mortgage_total_interest);
     const totalPaid = Number(property.mortgage_total_paid);
     const monthlyRate = Number(property.mortgage_monthly_rate);
+    const loanAmount = Number(property.mortgage_loan_amount);
 
     const payoffText = Number.isFinite(payoffYears) ? `${payoffYears} Jahre` : '–';
     const monthlyRateText = Number.isFinite(monthlyRate)
       ? currencyFormatter.format(Math.round(monthlyRate))
+      : '–';
+    const loanAmountText = Number.isFinite(loanAmount)
+      ? currencyFormatter.format(Math.round(loanAmount))
       : '–';
     const interestText = Number.isFinite(totalInterest)
       ? currencyFormatter.format(Math.round(totalInterest))
@@ -202,6 +206,10 @@ function renderListings(listings, fallbackMessage, options = {}) {
 
     mortgageInfo.innerHTML = `
       <p class="mortgage-title">Tilgungsübersicht</p>
+      <div class="mortgage-metric">
+        <span class="mortgage-metric-label">Darlehenshöhe</span>
+        <strong class="mortgage-metric-value">${loanAmountText}</strong>
+      </div>
       <div class="mortgage-metric">
         <span class="mortgage-metric-label">Monatliche Rate</span>
         <strong class="mortgage-metric-value">${monthlyRateText}</strong>
