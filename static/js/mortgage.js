@@ -109,6 +109,9 @@ function renderListings(listings, fallbackMessage, options = {}) {
     const item = document.createElement('li');
     item.className = 'listing-item';
 
+    const details = document.createElement('div');
+    details.className = 'listing-details';
+
     const header = document.createElement('div');
     header.className = 'listing-header';
 
@@ -128,12 +131,12 @@ function renderListings(listings, fallbackMessage, options = {}) {
       header.append(affordability);
     }
 
-    item.append(header);
+    details.append(header);
 
     const address = document.createElement('p');
     address.className = 'listing-address';
     address.textContent = property.address;
-    item.append(address);
+    details.append(address);
 
     const meta = document.createElement('div');
     meta.className = 'listing-meta';
@@ -143,7 +146,7 @@ function renderListings(listings, fallbackMessage, options = {}) {
       ? `${currencyFormatter.format(property.price_per_sqm)} / m²`
       : 'Preis / m² n. v.';
     meta.innerHTML = `<span>${sqm}</span><span>${rooms}</span><span>${pricePerSqm}</span>`;
-    item.append(meta);
+    details.append(meta);
 
     const actions = document.createElement('div');
     actions.className = 'listing-actions';
@@ -154,7 +157,41 @@ function renderListings(listings, fallbackMessage, options = {}) {
     mockupLink.rel = 'noreferrer noopener';
     mockupLink.textContent = 'Exposé ansehen';
     actions.append(mockupLink);
-    item.append(actions);
+    details.append(actions);
+
+    item.append(details);
+
+    const mortgageInfo = document.createElement('div');
+    mortgageInfo.className = 'listing-mortgage';
+    const payoffYears = Number(property.mortgage_years);
+    const totalInterest = Number(property.mortgage_total_interest);
+    const totalPaid = Number(property.mortgage_total_paid);
+
+    const payoffText = Number.isFinite(payoffYears) ? `${payoffYears} Jahre` : '–';
+    const interestText = Number.isFinite(totalInterest)
+      ? currencyFormatter.format(Math.round(totalInterest))
+      : '–';
+    const totalPaidText = Number.isFinite(totalPaid)
+      ? currencyFormatter.format(Math.round(totalPaid))
+      : '–';
+
+    mortgageInfo.innerHTML = `
+      <p class="mortgage-title">Tilgungsübersicht</p>
+      <div class="mortgage-metric">
+        <span class="mortgage-metric-label">Abbezahlt in</span>
+        <strong class="mortgage-metric-value">${payoffText}</strong>
+      </div>
+      <div class="mortgage-metric">
+        <span class="mortgage-metric-label">Bank erhält</span>
+        <strong class="mortgage-metric-value">${interestText}</strong>
+      </div>
+      <div class="mortgage-metric">
+        <span class="mortgage-metric-label">Gesamtsumme</span>
+        <strong class="mortgage-metric-value">${totalPaidText}</strong>
+      </div>
+    `;
+
+    item.append(mortgageInfo);
 
     listingResults.append(item);
   });
