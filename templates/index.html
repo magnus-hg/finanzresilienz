@@ -10,7 +10,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
 </head>
 <body>
   <main class="container">
@@ -92,7 +92,11 @@
         </div>
         <div class="next-step-column">
           <p class="column-title">Kann ich mir eine Immobilie leisten</p>
-          <button class="secondary" type="button" onclick="window.location.href='immobilienrechner.html'">
+          <button
+            class="secondary"
+            type="button"
+            onclick="window.location.href='{{ url_for('mortgage_page') }}'"
+          >
             Jetzt prüfen
           </button>
         </div>
@@ -100,8 +104,11 @@
     </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" crossorigin="anonymous"></script>
-  <script src="storage.js"></script>
-  <script src="script.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"
+    crossorigin="anonymous"
+  ></script>
+  <script src="{{ url_for('static', filename='js/storage.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

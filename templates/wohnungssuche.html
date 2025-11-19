@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
   </head>
   <body>
     <main class="container">
@@ -23,7 +23,9 @@
           Nominatim und öffnen Immobilienscout24 mit dem passenden Filter.
         </p>
         <p>
-          <a class="broker-button" style="width:auto" href="immobilienrechner.html">← Zurück zum Immobilienrechner</a>
+          <a class="broker-button" style="width:auto" href="{{ url_for('mortgage_page') }}"
+            >← Zurück zum Immobilienrechner</a
+          >
         </p>
       </header>
 
@@ -62,7 +64,7 @@
       </section>
     </main>
 
-    <script src="storage.js"></script>
-    <script src="wohnungssuche.js"></script>
+    <script src="{{ url_for('static', filename='js/storage.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/wohnungssuche.js') }}"></script>
   </body>
 </html>

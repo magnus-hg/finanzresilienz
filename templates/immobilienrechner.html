@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
   </head>
   <body>
     <main class="container">
@@ -24,7 +24,9 @@
           Objektpreis ohne 10,5&nbsp;% Nebenkosten.
         </p>
         <p>
-          <a class="broker-button" style="width:auto" href="index.html">← Zurück zur Vermögensentwicklung</a>
+          <a class="broker-button" style="width:auto" href="{{ url_for('home_page') }}"
+            >← Zurück zur Vermögensentwicklung</a
+          >
         </p>
       </header>
 
@@ -130,13 +132,15 @@
             <p class="muted">
               Entdecken Sie verfügbare Wohnungen und Häuser in Ihrer Umgebung.
             </p>
-            <a class="broker-button" href="wohnungssuche.html">Finde geeignete Wohnungen in meiner Gegend</a>
+            <a class="broker-button" href="{{ url_for('housing_page') }}"
+              >Finde geeignete Wohnungen in meiner Gegend</a
+            >
           </article>
         </div>
       </section>
     </main>
 
-    <script src="storage.js"></script>
-    <script src="mortgage.js"></script>
+    <script src="{{ url_for('static', filename='js/storage.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mortgage.js') }}"></script>
   </body>
 </html>

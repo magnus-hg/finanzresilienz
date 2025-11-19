@@ -3,6 +3,7 @@ const INTEREST_RATE = 0.04;
 const REPAYMENT_RATE = 0.01;
 const MARKET_RADIUS_KM = 8;
 const MAX_LISTINGS = 5;
+const MOCK_LISTING_BASE_URL = 'https://www.immobilienscout24.de/expose';
 
 const mortgageForm = document.getElementById('mortgage-form');
 const budgetInput = document.getElementById('mortgage-budget');
@@ -126,6 +127,17 @@ function renderListings(listings, fallbackMessage) {
       : 'Preis / m² n. v.';
     meta.innerHTML = `<span>${sqm}</span><span>${rooms}</span><span>${pricePerSqm}</span>`;
     item.append(meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'listing-actions';
+    const mockupLink = document.createElement('a');
+    mockupLink.className = 'listing-link';
+    mockupLink.href = `${MOCK_LISTING_BASE_URL}/${encodeURIComponent(property.identifier)}`;
+    mockupLink.target = '_blank';
+    mockupLink.rel = 'noreferrer noopener';
+    mockupLink.textContent = 'Exposé ansehen';
+    actions.append(mockupLink);
+    item.append(actions);
 
     listingResults.append(item);
   });
