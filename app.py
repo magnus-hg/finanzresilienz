@@ -4,6 +4,12 @@ from typing import List, Optional, Tuple
 
 from flask import Flask, jsonify, render_template, request
 
+from utils import MAX_AMORTIZATION_YEARS, mortgage_schedule
+
+INTEREST_RATE = 0.04
+INITIAL_TILGUNG_RATE = 0.01
+
+
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
 
@@ -28,6 +34,8 @@ class Property:
         if self.rent_price_eur is None:
             return None
         return round(self.rent_price_eur / self.living_space_sqm, 2)
+
+
 
 
 def _deg_per_km() -> float:
@@ -104,13 +112,27 @@ def _build_property_payload(latitude: float, longitude: float, radius: float,
     filtered = _filter_properties(properties, min_price, max_price, min_size, max_size, min_rooms, max_rooms)
     filtered.sort(key=lambda prop: prop.price_eur, reverse=True)
     return [
-        {
-            **asdict(prop),
-            "price_per_sqm": prop.price_per_sqm,
-            "rent_per_sqm": prop.rent_per_sqm,
-        }
+        _serialize_property_with_mortgage(prop)
         for prop in filtered
     ]
+
+
+def _serialize_property_with_mortgage(prop: Property) -> dict:
+    schedule, total_interest, total_paid = mortgage_schedule(
+        prop.price_eur,
+        INTEREST_RATE,
+        INITIAL_TILGUNG_RATE,
+        MAX_AMORTIZATION_YEARS,
+    )
+    mortgage_years = len(schedule)
+    return {
+        **asdict(prop),
+        "price_per_sqm": prop.price_per_sqm,
+        "rent_per_sqm": prop.rent_per_sqm,
+        "mortgage_years": mortgage_years,
+        "mortgage_total_interest": round(total_interest, 2),
+        "mortgage_total_paid": round(total_paid, 2),
+    }
 
 
 @app.route("/properties")
