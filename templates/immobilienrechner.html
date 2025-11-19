@@ -20,8 +20,9 @@
         <p>
           Wir berechnen, welchen Immobilienpreis Sie sich leisten können. Aus
           Ihrer monatlichen Rate und Ihrem Vermögen bestimmen wir das mögliche
-          Darlehen (1&nbsp;% Tilgung p.a., 4&nbsp;% Zins p.a.) sowie den maximalen
-          Objektpreis ohne 10,5&nbsp;% Nebenkosten.
+          Darlehen, während Sie Zins- und Tilgungssatz flexibel wählen können.
+          Standardmäßig rechnen wir mit 1&nbsp;% Zins p.a. und 4&nbsp;% Tilgung p.a.
+          sowie dem maximalen Objektpreis ohne 10,5&nbsp;% Nebenkosten.
         </p>
         <p>
           <a class="broker-button" style="width:auto" href="{{ url_for('home_page') }}"
@@ -46,6 +47,32 @@
           <div class="field">
             <label for="assets">Vermögen (EUR)</label>
             <input type="number" id="assets" name="assets" min="0" step="1000" required />
+          </div>
+          <div class="field">
+            <label for="interest-rate">Zins p.a. (%)</label>
+            <input
+              type="number"
+              id="interest-rate"
+              name="interest-rate"
+              min="0"
+              step="0.1"
+              value="1"
+              required
+            />
+            <p class="muted">Beispiel: 1 entspricht 1&nbsp;% p.a.</p>
+          </div>
+          <div class="field">
+            <label for="repayment-rate">Tilgung p.a. (%)</label>
+            <input
+              type="number"
+              id="repayment-rate"
+              name="repayment-rate"
+              min="0.1"
+              step="0.1"
+              value="4"
+              required
+            />
+            <p class="muted">Tilgung sollte &gt; 0 sein, z. B. 4 für 4&nbsp;% p.a.</p>
           </div>
           <div class="field">
             <label for="postal-code">Postleitzahl (PLZ)</label>
