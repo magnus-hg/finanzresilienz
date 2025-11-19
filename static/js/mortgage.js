@@ -255,7 +255,7 @@ async function fetchCoordinates(query) {
   return { lat: Number(lat), lon: Number(lon), displayName };
 }
 
-async function fetchListings(coords, radius, maxPrice, rates = {}) {
+async function fetchListings(coords, radius, maxPrice, rates = {}, availableAssets = 0) {
   if (!Number.isFinite(maxPrice) || maxPrice <= 0) {
     return { properties: [] };
   }
@@ -271,6 +271,9 @@ async function fetchListings(coords, radius, maxPrice, rates = {}) {
   }
   if (rates && Number.isFinite(rates.repaymentRate)) {
     params.set('tilgung_rate', String(rates.repaymentRate));
+  }
+  if (Number.isFinite(availableAssets) && availableAssets > 0) {
+    params.set('available_assets', String(Math.max(availableAssets, 0)));
   }
   const response = await fetch(`/properties?${params.toString()}`);
   if (!response.ok) {
@@ -301,7 +304,13 @@ async function fetchAveragePrice(coords, radius, maxPrice, samples = 5) {
   return response.json();
 }
 
-async function updateMarketInsights({ postalCode, maxPropertyPrice, rates = {}, fromStorage = false }) {
+async function updateMarketInsights({
+  postalCode,
+  maxPropertyPrice,
+  rates = {},
+  availableAssets = 0,
+  fromStorage = false,
+}) {
   if (!marketInsightsCard) return;
 
   if (!postalCode) {
@@ -332,11 +341,12 @@ async function updateMarketInsights({ postalCode, maxPropertyPrice, rates = {}, 
       ? rates.repaymentRate
       : DEFAULT_REPAYMENT_PERCENT / 100,
   };
+  const sanitizedAssets = Number.isFinite(availableAssets) ? Math.max(availableAssets, 0) : 0;
 
   try {
     const coords = await fetchCoordinates(`${postalCode}, Deutschland`);
     const [listingsData, averageData] = await Promise.all([
-      fetchListings(coords, MARKET_RADIUS_KM, maxPropertyPrice, appliedRates),
+      fetchListings(coords, MARKET_RADIUS_KM, maxPropertyPrice, appliedRates, sanitizedAssets),
       fetchAveragePrice(coords, MARKET_RADIUS_KM, maxPropertyPrice),
     ]);
 
@@ -448,6 +458,7 @@ function handleMortgageSubmit(event) {
     postalCode,
     maxPropertyPrice,
     rates: { interestRate, repaymentRate },
+    availableAssets: assets,
     fromStorage: false,
   });
 }
@@ -471,10 +482,15 @@ function initMarketInsightsFromStorage() {
         ? savedUserData.repaymentRatePercent / 100
         : DEFAULT_REPAYMENT_PERCENT / 100;
   if (postalCode && typeof maxPrice === 'number' && maxPrice > 0) {
+    const storedAssets =
+      typeof savedUserData.assets === 'number' && savedUserData.assets > 0
+        ? savedUserData.assets
+        : 0;
     updateMarketInsights({
       postalCode,
       maxPropertyPrice: maxPrice,
       rates: { interestRate: storedInterestRate, repaymentRate: storedRepaymentRate },
+      availableAssets: storedAssets,
       fromStorage: true,
     });
   }
