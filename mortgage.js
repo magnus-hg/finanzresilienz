@@ -1,22 +1,23 @@
 const ADDITIONAL_COST_RATE = 0.105;
 const INTEREST_RATE = 0.04;
 const REPAYMENT_RATE = 0.01;
+const MARKET_RADIUS_KM = 8;
+const MAX_LISTINGS = 5;
 
 const mortgageForm = document.getElementById('mortgage-form');
 const budgetInput = document.getElementById('mortgage-budget');
 const assetsInput = document.getElementById('assets');
+const postalCodeInput = document.getElementById('postal-code');
 const totalCostOutput = document.getElementById('total-cost');
 const loanAmountOutput = document.getElementById('loan-amount');
 const calculatedRateOutput = document.getElementById('calculated-rate');
 const affordabilityMessage = document.getElementById('affordability-message');
 const resultCard = document.getElementById('result-card');
-const housingForm = document.getElementById('housing-search-form');
-const housingPriceInput = document.getElementById('housing-max-price');
-const housingLocationInput = document.getElementById('housing-location');
-const housingRadiusInput = document.getElementById('housing-radius');
-const housingMessage = document.getElementById('housing-search-message');
-const housingSubmitButton = document.getElementById('housing-search-submit');
-const housingPriceHint = document.getElementById('housing-price-hint');
+const marketInsightsCard = document.getElementById('market-insights');
+const marketInsightsMessage = document.getElementById('market-insights-message');
+const averagePriceValue = document.getElementById('average-price-value');
+const listingsMessage = document.getElementById('listings-message');
+const listingResults = document.getElementById('listing-results');
 
 const currencyFormatter = new Intl.NumberFormat('de-DE', {
   style: 'currency',
@@ -25,7 +26,6 @@ const currencyFormatter = new Intl.NumberFormat('de-DE', {
 });
 
 const savedUserData = window.userDataStore ? userDataStore.load() : {};
-let housingMaxPrice = null;
 
 function populateInitialValues() {
   if (typeof savedUserData.monthlyRate === 'number') {
@@ -34,17 +34,8 @@ function populateInitialValues() {
   if (typeof savedUserData.assets === 'number') {
     assetsInput.value = savedUserData.assets;
   }
-}
-
-function initHousingSearchFromStorage() {
-  if (!housingForm) return;
-
-  disableHousingSearch();
-
-  if (typeof savedUserData.maxPropertyPrice === 'number' && savedUserData.maxPropertyPrice > 0) {
-    enableHousingSearch(savedUserData.maxPropertyPrice, {
-      fromStoredCalculation: true,
-    });
+  if (typeof savedUserData.postalCode === 'string') {
+    postalCodeInput.value = savedUserData.postalCode;
   }
 }
 
@@ -56,10 +47,18 @@ function persistNumberInput(input, key) {
   });
 }
 
+function persistTextInput(input, key) {
+  if (!input) return;
+  input.addEventListener('input', () => {
+    const value = input.value.trim();
+    userDataStore.save({ [key]: value || null });
+  });
+}
+
 populateInitialValues();
 persistNumberInput(budgetInput, 'monthlyRate');
 persistNumberInput(assetsInput, 'assets');
-initHousingSearchFromStorage();
+persistTextInput(postalCodeInput, 'postalCode');
 
 function calculateAffordableValues(budget, assets) {
   const yearlyRate = INTEREST_RATE + REPAYMENT_RATE;
@@ -74,122 +73,67 @@ function calculateAffordableValues(budget, assets) {
   };
 }
 
-function handleMortgageSubmit(event) {
-  event.preventDefault();
+function setMarketInsightsMessage(message) {
+  if (marketInsightsMessage) {
+    marketInsightsMessage.textContent = message;
+  }
+}
 
-  const budget = Number(budgetInput.value);
-  const assets = Number(assetsInput.value);
+function setAveragePriceDisplay(valueText) {
+  if (averagePriceValue) {
+    averagePriceValue.textContent = valueText;
+  }
+}
 
-  const hasValidNumbers =
-    Number.isFinite(budget) &&
-    Number.isFinite(assets) &&
-    budget >= 0 &&
-    assets >= 0;
+function renderListings(listings, fallbackMessage) {
+  if (!listingResults) return;
+  listingResults.innerHTML = '';
 
-  if (!hasValidNumbers) {
-    alert('Bitte geben Sie gültige Werte für Rate und Vermögen ein.');
+  if (!Array.isArray(listings) || listings.length === 0) {
+    if (listingsMessage) {
+      listingsMessage.textContent = fallbackMessage || 'Keine Immobilien gefunden.';
+    }
     return;
   }
 
-  const { possibleLoan, totalAffordable, maxPropertyPrice } = calculateAffordableValues(
-    budget,
-    assets,
-  );
+  if (listingsMessage) {
+    listingsMessage.textContent = `Wir zeigen ${Math.min(
+      listings.length,
+      MAX_LISTINGS,
+    )} zufällige Immobilienangebote in Ihrer Nähe.`;
+  }
 
-  totalCostOutput.textContent = currencyFormatter.format(maxPropertyPrice);
-  loanAmountOutput.textContent = currencyFormatter.format(possibleLoan);
-  calculatedRateOutput.textContent = currencyFormatter.format(totalAffordable);
+  listings.slice(0, MAX_LISTINGS).forEach((property) => {
+    const item = document.createElement('li');
+    item.className = 'listing-item';
 
-  userDataStore.save({
-    monthlyRate: budget,
-    assets,
-    maxPropertyPrice,
+    const price = document.createElement('p');
+    price.className = 'listing-price';
+    price.textContent = currencyFormatter.format(property.price_eur);
+    item.append(price);
+
+    const address = document.createElement('p');
+    address.className = 'listing-address';
+    address.textContent = property.address;
+    item.append(address);
+
+    const meta = document.createElement('div');
+    meta.className = 'listing-meta';
+    const sqm = `${Math.round(property.living_space_sqm)} m²`;
+    const rooms = `${property.rooms} Zimmer`;
+    const pricePerSqm = property.price_per_sqm
+      ? `${currencyFormatter.format(property.price_per_sqm)} / m²`
+      : 'Preis / m² n. v.';
+    meta.innerHTML = `<span>${sqm}</span><span>${rooms}</span><span>${pricePerSqm}</span>`;
+    item.append(meta);
+
+    listingResults.append(item);
   });
-
-  resultCard.classList.remove('result-positive', 'result-negative');
-  resultCard.classList.add('result-positive');
-
-  affordabilityMessage.textContent =
-    `Mit einer monatlichen Rate von ${currencyFormatter.format(budget)} und einem Vermögen von ${currencyFormatter.format(
-      assets,
-    )} können Sie eine Immobilie im Wert von bis zu ${currencyFormatter.format(
-      maxPropertyPrice,
-    )} (zzgl. Nebenkosten) finanzieren.`;
-
-  enableHousingSearch(maxPropertyPrice, { fromStoredCalculation: false });
 }
 
-mortgageForm.addEventListener('submit', handleMortgageSubmit);
-
-function disableHousingSearch() {
-  if (!housingForm) return;
-  housingMaxPrice = null;
-  if (housingPriceInput) {
-    housingPriceInput.value = '';
-  }
-  if (housingLocationInput) {
-    housingLocationInput.value = '';
-    housingLocationInput.disabled = true;
-  }
-  if (housingRadiusInput) {
-    housingRadiusInput.value = '5';
-    housingRadiusInput.disabled = true;
-  }
-  if (housingSubmitButton) {
-    housingSubmitButton.disabled = true;
-  }
-  if (housingMessage) {
-    housingMessage.textContent =
-      'Berechnen Sie zunächst den maximalen Kaufpreis, um die Wohnungssuche zu starten.';
-  }
-}
-
-function enableHousingSearch(price, { fromStoredCalculation } = { fromStoredCalculation: false }) {
-  if (!housingForm) return;
-  housingMaxPrice = price;
-  if (housingPriceInput) {
-    housingPriceInput.value = currencyFormatter.format(price);
-  }
-  if (housingLocationInput) {
-    housingLocationInput.disabled = false;
-  }
-  if (housingRadiusInput) {
-    if (!housingRadiusInput.value) {
-      housingRadiusInput.value = '5';
-    }
-    housingRadiusInput.disabled = false;
-  }
-  if (housingSubmitButton) {
-    housingSubmitButton.disabled = false;
-  }
-  if (housingMessage) {
-    housingMessage.textContent = fromStoredCalculation
-      ? `Maximaler Kaufpreis aus Ihrer letzten Berechnung: ${currencyFormatter.format(
-          price,
-        )}. Geben Sie nun einen Ort an, um passende Angebote zu sehen.`
-      : `Maximaler Kaufpreis berechnet: ${currencyFormatter.format(
-          price,
-        )}. Geben Sie nun einen Ort an, um passende Angebote zu sehen.`;
-  }
-  if (housingPriceHint) {
-    housingPriceHint.textContent = 'Der Wert basiert auf Ihrer aktuellen Finanzierungsberechnung.';
-  }
-}
-
-function validateHousingInputs(location, radius) {
-  if (!housingMaxPrice) {
-    alert('Bitte berechnen Sie zuerst den maximalen Kaufpreis.');
-    return false;
-  }
-  if (!location) {
-    alert('Bitte geben Sie einen Ort oder eine Adresse ein.');
-    return false;
-  }
-  if (!Number.isFinite(radius) || radius <= 0) {
-    alert('Bitte geben Sie einen gültigen Suchradius in Kilometern an.');
-    return false;
-  }
-  return true;
+function resetMarketInsights() {
+  setAveragePriceDisplay('–');
+  renderListings([], 'Es wurden noch keine Immobilien berechnet.');
 }
 
 async function fetchCoordinates(query) {
@@ -209,54 +153,158 @@ async function fetchCoordinates(query) {
 
   const results = await response.json();
   if (!Array.isArray(results) || results.length === 0) {
-    throw new Error('Für diesen Ort wurden keine Koordinaten gefunden.');
+    throw new Error('Für diese PLZ wurden keine Koordinaten gefunden.');
   }
 
   const { lat, lon, display_name: displayName } = results[0];
   return { lat: Number(lat), lon: Number(lon), displayName };
 }
 
-function openImmobilienScout(price, coords, radius) {
-  const searchParams = new URLSearchParams();
-  searchParams.set('price', `-${price.toFixed(1)}`);
-  const formattedLat = coords.lat.toFixed(5);
-  const formattedLon = coords.lon.toFixed(5);
-  searchParams.set('geocoordinates', `${formattedLat};${formattedLon};${radius.toFixed(1)}`);
-
-  const searchUrl = `https://www.immobilienscout24.de/Suche/radius/wohnung-kaufen?${searchParams.toString()}`;
-  window.open(searchUrl, '_blank');
+async function fetchAveragePurchase(coords, radius) {
+  const params = new URLSearchParams({
+    latitude: coords.lat,
+    longitude: coords.lon,
+    radius,
+  });
+  const response = await fetch(`/average-price?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error('Durchschnittspreise konnten nicht geladen werden.');
+  }
+  return response.json();
 }
 
-async function handleHousingSearchSubmit(event) {
-  event.preventDefault();
-  if (!housingForm) return;
+async function fetchListings(coords, radius, maxPrice) {
+  if (!Number.isFinite(maxPrice) || maxPrice <= 0) {
+    return { properties: [] };
+  }
+  const params = new URLSearchParams({
+    latitude: coords.lat,
+    longitude: coords.lon,
+    radius,
+    min_price: '0',
+    max_price: String(Math.round(maxPrice)),
+  });
+  const response = await fetch(`/properties?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error('Beispielangebote konnten nicht geladen werden.');
+  }
+  return response.json();
+}
 
-  const location = housingLocationInput ? housingLocationInput.value.trim() : '';
-  const radius = housingRadiusInput ? Number(housingRadiusInput.value) || 5 : 5;
+async function updateMarketInsights({ postalCode, maxPropertyPrice, fromStorage = false }) {
+  if (!marketInsightsCard) return;
 
-  if (!validateHousingInputs(location, radius)) {
+  if (!postalCode) {
+    setMarketInsightsMessage('Bitte geben Sie Ihre PLZ an, um Marktdaten zu laden.');
+    resetMarketInsights();
     return;
   }
 
-  if (housingMessage) {
-    housingMessage.textContent = 'Koordinaten werden über Nominatim geladen …';
+  if (!Number.isFinite(maxPropertyPrice) || maxPropertyPrice <= 0) {
+    setMarketInsightsMessage('Berechnen Sie zuerst den maximalen Kaufpreis, um Marktdaten zu erhalten.');
+    resetMarketInsights();
+    return;
   }
+
+  setMarketInsightsMessage(
+    fromStorage
+      ? 'Marktdaten werden anhand Ihrer zuletzt eingegebenen Werte geladen …'
+      : 'Wir ermitteln Durchschnittspreise und passende Immobilien …',
+  );
+  setAveragePriceDisplay('…');
+  renderListings([], 'Beispielangebote werden geladen …');
 
   try {
-    const coords = await fetchCoordinates(location);
-    if (housingMessage) {
-      housingMessage.textContent =
-        `Koordinaten für ${coords.displayName || location} gefunden. Immobilienscout24 wird geöffnet …`;
+    const coords = await fetchCoordinates(`${postalCode}, Deutschland`);
+    const [averageData, listingsData] = await Promise.all([
+      fetchAveragePurchase(coords, MARKET_RADIUS_KM),
+      fetchListings(coords, MARKET_RADIUS_KM, maxPropertyPrice),
+    ]);
+
+    if (averageData && typeof averageData.average_price_per_sqm === 'number') {
+      setAveragePriceDisplay(`${currencyFormatter.format(averageData.average_price_per_sqm)} / m²`);
+      setMarketInsightsMessage(
+        `Ø Kaufpreis innerhalb eines Radius von ${MARKET_RADIUS_KM} km um ${postalCode}.`,
+      );
+    } else {
+      setAveragePriceDisplay('–');
+      setMarketInsightsMessage('Keine Durchschnittspreise verfügbar.');
     }
-    openImmobilienScout(housingMaxPrice, coords, radius);
+
+    const listings = Array.isArray(listingsData.properties) ? listingsData.properties : [];
+    if (listings.length === 0) {
+      renderListings(
+        [],
+        'Keine passenden Beispielangebote gefunden. Bitte passen Sie Ihr Budget oder die PLZ an.',
+      );
+    } else {
+      renderListings(listings, '');
+    }
   } catch (error) {
     console.error(error);
-    if (housingMessage) {
-      housingMessage.textContent = error.message;
-    }
+    setMarketInsightsMessage(error.message || 'Marktdaten konnten nicht geladen werden.');
+    setAveragePriceDisplay('–');
+    renderListings([], 'Marktdaten konnten nicht geladen werden.');
   }
 }
 
-if (housingForm) {
-  housingForm.addEventListener('submit', handleHousingSearchSubmit);
+function handleMortgageSubmit(event) {
+  event.preventDefault();
+
+  const budget = Number(budgetInput.value);
+  const assets = Number(assetsInput.value);
+  const postalCode = postalCodeInput.value.trim();
+
+  const hasValidNumbers =
+    Number.isFinite(budget) &&
+    Number.isFinite(assets) &&
+    budget >= 0 &&
+    assets >= 0 &&
+    postalCode.length > 0;
+
+  if (!hasValidNumbers) {
+    alert('Bitte geben Sie gültige Werte für Rate, Vermögen und PLZ ein.');
+    return;
+  }
+
+  const { possibleLoan, totalAffordable, maxPropertyPrice } = calculateAffordableValues(
+    budget,
+    assets,
+  );
+
+  totalCostOutput.textContent = currencyFormatter.format(maxPropertyPrice);
+  loanAmountOutput.textContent = currencyFormatter.format(possibleLoan);
+  calculatedRateOutput.textContent = currencyFormatter.format(totalAffordable);
+
+  userDataStore.save({
+    monthlyRate: budget,
+    assets,
+    postalCode,
+    maxPropertyPrice,
+  });
+
+  resultCard.classList.remove('result-positive', 'result-negative');
+  resultCard.classList.add('result-positive');
+
+  affordabilityMessage.textContent =
+    `Mit einer monatlichen Rate von ${currencyFormatter.format(budget)} und einem Vermögen von ${currencyFormatter.format(
+      assets,
+    )} können Sie eine Immobilie im Wert von bis zu ${currencyFormatter.format(
+      maxPropertyPrice,
+    )} (zzgl. Nebenkosten) finanzieren.`;
+
+  updateMarketInsights({ postalCode, maxPropertyPrice, fromStorage: false });
 }
+
+mortgageForm.addEventListener('submit', handleMortgageSubmit);
+
+function initMarketInsightsFromStorage() {
+  if (!marketInsightsCard) return;
+  const postalCode = typeof savedUserData.postalCode === 'string' ? savedUserData.postalCode : '';
+  const maxPrice = typeof savedUserData.maxPropertyPrice === 'number' ? savedUserData.maxPropertyPrice : null;
+  if (postalCode && typeof maxPrice === 'number' && maxPrice > 0) {
+    updateMarketInsights({ postalCode, maxPropertyPrice: maxPrice, fromStorage: true });
+  }
+}
+
+initMarketInsightsFromStorage();
