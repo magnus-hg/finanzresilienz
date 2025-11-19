@@ -1,6 +1,6 @@
 const ADDITIONAL_COST_RATE = 0.105;
-const INTEREST_RATE = 0.04;
-const REPAYMENT_RATE = 0.01;
+const DEFAULT_INTEREST_PERCENT = 1;
+const DEFAULT_REPAYMENT_PERCENT = 4;
 const MARKET_RADIUS_KM = 8;
 const MAX_LISTINGS = 10;
 const MOCK_LISTING_BASE_URL = 'https://www.immobilienscout24.de/expose';
@@ -8,6 +8,8 @@ const MOCK_LISTING_BASE_URL = 'https://www.immobilienscout24.de/expose';
 const mortgageForm = document.getElementById('mortgage-form');
 const budgetInput = document.getElementById('mortgage-budget');
 const assetsInput = document.getElementById('assets');
+const interestInput = document.getElementById('interest-rate');
+const repaymentInput = document.getElementById('repayment-rate');
 const postalCodeInput = document.getElementById('postal-code');
 const totalCostOutput = document.getElementById('total-cost');
 const loanAmountOutput = document.getElementById('loan-amount');
@@ -35,6 +37,20 @@ function populateInitialValues() {
   if (typeof savedUserData.assets === 'number') {
     assetsInput.value = savedUserData.assets;
   }
+  if (interestInput) {
+    if (typeof savedUserData.interestRatePercent === 'number') {
+      interestInput.value = savedUserData.interestRatePercent;
+    } else if (!interestInput.value) {
+      interestInput.value = DEFAULT_INTEREST_PERCENT;
+    }
+  }
+  if (repaymentInput) {
+    if (typeof savedUserData.repaymentRatePercent === 'number') {
+      repaymentInput.value = savedUserData.repaymentRatePercent;
+    } else if (!repaymentInput.value) {
+      repaymentInput.value = DEFAULT_REPAYMENT_PERCENT;
+    }
+  }
   if (typeof savedUserData.postalCode === 'string') {
     postalCodeInput.value = savedUserData.postalCode;
   }
@@ -59,10 +75,15 @@ function persistTextInput(input, key) {
 populateInitialValues();
 persistNumberInput(budgetInput, 'monthlyRate');
 persistNumberInput(assetsInput, 'assets');
+persistNumberInput(interestInput, 'interestRatePercent');
+persistNumberInput(repaymentInput, 'repaymentRatePercent');
 persistTextInput(postalCodeInput, 'postalCode');
 
-function calculateAffordableValues(budget, assets) {
-  const yearlyRate = INTEREST_RATE + REPAYMENT_RATE;
+function calculateAffordableValues(budget, assets, interestRate, repaymentRate) {
+  const yearlyRate = interestRate + repaymentRate;
+  if (yearlyRate <= 0) {
+    throw new Error('Zins und Tilgung müssen größer als 0 sein.');
+  }
   const possibleLoan = (budget * 12) / yearlyRate;
   const totalAffordable = possibleLoan + assets;
   const maxPropertyPrice = totalAffordable / (1 + ADDITIONAL_COST_RATE);
@@ -166,8 +187,12 @@ function renderListings(listings, fallbackMessage, options = {}) {
     const payoffYears = Number(property.mortgage_years);
     const totalInterest = Number(property.mortgage_total_interest);
     const totalPaid = Number(property.mortgage_total_paid);
+    const monthlyRate = Number(property.mortgage_monthly_rate);
 
     const payoffText = Number.isFinite(payoffYears) ? `${payoffYears} Jahre` : '–';
+    const monthlyRateText = Number.isFinite(monthlyRate)
+      ? currencyFormatter.format(Math.round(monthlyRate))
+      : '–';
     const interestText = Number.isFinite(totalInterest)
       ? currencyFormatter.format(Math.round(totalInterest))
       : '–';
@@ -177,6 +202,10 @@ function renderListings(listings, fallbackMessage, options = {}) {
 
     mortgageInfo.innerHTML = `
       <p class="mortgage-title">Tilgungsübersicht</p>
+      <div class="mortgage-metric">
+        <span class="mortgage-metric-label">Monatliche Rate</span>
+        <strong class="mortgage-metric-value">${monthlyRateText}</strong>
+      </div>
       <div class="mortgage-metric">
         <span class="mortgage-metric-label">Abbezahlt in</span>
         <strong class="mortgage-metric-value">${payoffText}</strong>
@@ -226,7 +255,7 @@ async function fetchCoordinates(query) {
   return { lat: Number(lat), lon: Number(lon), displayName };
 }
 
-async function fetchListings(coords, radius, maxPrice) {
+async function fetchListings(coords, radius, maxPrice, rates = {}) {
   if (!Number.isFinite(maxPrice) || maxPrice <= 0) {
     return { properties: [] };
   }
@@ -237,6 +266,12 @@ async function fetchListings(coords, radius, maxPrice) {
     min_price: '0',
     max_price: String(Math.round(maxPrice)),
   });
+  if (rates && Number.isFinite(rates.interestRate)) {
+    params.set('interest_rate', String(rates.interestRate));
+  }
+  if (rates && Number.isFinite(rates.repaymentRate)) {
+    params.set('tilgung_rate', String(rates.repaymentRate));
+  }
   const response = await fetch(`/properties?${params.toString()}`);
   if (!response.ok) {
     throw new Error('Beispielangebote konnten nicht geladen werden.');
@@ -266,7 +301,7 @@ async function fetchAveragePrice(coords, radius, maxPrice, samples = 5) {
   return response.json();
 }
 
-async function updateMarketInsights({ postalCode, maxPropertyPrice, fromStorage = false }) {
+async function updateMarketInsights({ postalCode, maxPropertyPrice, rates = {}, fromStorage = false }) {
   if (!marketInsightsCard) return;
 
   if (!postalCode) {
@@ -289,10 +324,19 @@ async function updateMarketInsights({ postalCode, maxPropertyPrice, fromStorage 
   setAveragePriceDisplay('…');
   renderListings([], 'Beispielangebote werden geladen …');
 
+  const appliedRates = {
+    interestRate: Number.isFinite(rates.interestRate)
+      ? rates.interestRate
+      : DEFAULT_INTEREST_PERCENT / 100,
+    repaymentRate: Number.isFinite(rates.repaymentRate)
+      ? rates.repaymentRate
+      : DEFAULT_REPAYMENT_PERCENT / 100,
+  };
+
   try {
     const coords = await fetchCoordinates(`${postalCode}, Deutschland`);
     const [listingsData, averageData] = await Promise.all([
-      fetchListings(coords, MARKET_RADIUS_KM, maxPropertyPrice),
+      fetchListings(coords, MARKET_RADIUS_KM, maxPropertyPrice, appliedRates),
       fetchAveragePrice(coords, MARKET_RADIUS_KM, maxPropertyPrice),
     ]);
 
@@ -342,24 +386,36 @@ function handleMortgageSubmit(event) {
 
   const budget = Number(budgetInput.value);
   const assets = Number(assetsInput.value);
+  const interestPercent = Number(interestInput.value);
+  const repaymentPercent = Number(repaymentInput.value);
   const postalCode = postalCodeInput.value.trim();
+  const interestRate = interestPercent / 100;
+  const repaymentRate = repaymentPercent / 100;
 
   const hasValidNumbers =
     Number.isFinite(budget) &&
     Number.isFinite(assets) &&
+    Number.isFinite(interestPercent) &&
+    Number.isFinite(repaymentPercent) &&
     budget >= 0 &&
     assets >= 0 &&
+    interestPercent >= 0 &&
+    repaymentPercent > 0 &&
     postalCode.length > 0;
 
   if (!hasValidNumbers) {
-    alert('Bitte geben Sie gültige Werte für Rate, Vermögen und PLZ ein.');
+    alert('Bitte geben Sie gültige Werte für Rate, Vermögen, Zins, Tilgung und PLZ ein.');
     return;
   }
 
-  const { possibleLoan, totalAffordable, maxPropertyPrice } = calculateAffordableValues(
-    budget,
-    assets,
-  );
+  let affordableValues;
+  try {
+    affordableValues = calculateAffordableValues(budget, assets, interestRate, repaymentRate);
+  } catch (error) {
+    alert(error.message);
+    return;
+  }
+  const { possibleLoan, totalAffordable, maxPropertyPrice } = affordableValues;
 
   totalCostOutput.textContent = currencyFormatter.format(maxPropertyPrice);
   loanAmountOutput.textContent = currencyFormatter.format(possibleLoan);
@@ -370,19 +426,30 @@ function handleMortgageSubmit(event) {
     assets,
     postalCode,
     maxPropertyPrice,
+    interestRatePercent: interestPercent,
+    repaymentRatePercent: repaymentPercent,
+    interestRate,
+    repaymentRate,
   });
 
   resultCard.classList.remove('result-positive', 'result-negative');
   resultCard.classList.add('result-positive');
 
+  const interestPercentText = interestPercent.toLocaleString('de-DE', { maximumFractionDigits: 2 });
+  const repaymentPercentText = repaymentPercent.toLocaleString('de-DE', { maximumFractionDigits: 2 });
   affordabilityMessage.textContent =
     `Mit einer monatlichen Rate von ${currencyFormatter.format(budget)} und einem Vermögen von ${currencyFormatter.format(
       assets,
-    )} können Sie eine Immobilie im Wert von bis zu ${currencyFormatter.format(
+    )} bei ${interestPercentText}% Zins und ${repaymentPercentText}% Tilgung eine Immobilie im Wert von bis zu ${currencyFormatter.format(
       maxPropertyPrice,
     )} (zzgl. Nebenkosten) finanzieren.`;
 
-  updateMarketInsights({ postalCode, maxPropertyPrice, fromStorage: false });
+  updateMarketInsights({
+    postalCode,
+    maxPropertyPrice,
+    rates: { interestRate, repaymentRate },
+    fromStorage: false,
+  });
 }
 
 mortgageForm.addEventListener('submit', handleMortgageSubmit);
@@ -391,8 +458,25 @@ function initMarketInsightsFromStorage() {
   if (!marketInsightsCard) return;
   const postalCode = typeof savedUserData.postalCode === 'string' ? savedUserData.postalCode : '';
   const maxPrice = typeof savedUserData.maxPropertyPrice === 'number' ? savedUserData.maxPropertyPrice : null;
+  const storedInterestRate =
+    typeof savedUserData.interestRate === 'number'
+      ? savedUserData.interestRate
+      : typeof savedUserData.interestRatePercent === 'number'
+        ? savedUserData.interestRatePercent / 100
+        : DEFAULT_INTEREST_PERCENT / 100;
+  const storedRepaymentRate =
+    typeof savedUserData.repaymentRate === 'number'
+      ? savedUserData.repaymentRate
+      : typeof savedUserData.repaymentRatePercent === 'number'
+        ? savedUserData.repaymentRatePercent / 100
+        : DEFAULT_REPAYMENT_PERCENT / 100;
   if (postalCode && typeof maxPrice === 'number' && maxPrice > 0) {
-    updateMarketInsights({ postalCode, maxPropertyPrice: maxPrice, fromStorage: true });
+    updateMarketInsights({
+      postalCode,
+      maxPropertyPrice: maxPrice,
+      rates: { interestRate: storedInterestRate, repaymentRate: storedRepaymentRate },
+      fromStorage: true,
+    });
   }
 }
 

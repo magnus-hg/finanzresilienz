@@ -6,8 +6,8 @@ from flask import Flask, jsonify, render_template, request
 
 from utils import MAX_AMORTIZATION_YEARS, mortgage_schedule
 
-INTEREST_RATE = 0.04
-INITIAL_TILGUNG_RATE = 0.01
+DEFAULT_INTEREST_RATE = 0.01
+DEFAULT_TILGUNG_RATE = 0.04
 
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -107,24 +107,27 @@ def _filter_properties(properties: List[Property], min_price: float, max_price: 
 def _build_property_payload(latitude: float, longitude: float, radius: float,
                             min_price: float, max_price: float,
                             min_size: float, max_size: float,
-                            min_rooms: int, max_rooms: int) -> List[dict]:
+                            min_rooms: int, max_rooms: int,
+                            interest_rate: float, initial_tilgung_rate: float) -> List[dict]:
     properties = _generate_properties(30, latitude, longitude, radius)
     filtered = _filter_properties(properties, min_price, max_price, min_size, max_size, min_rooms, max_rooms)
     filtered.sort(key=lambda prop: prop.price_eur, reverse=True)
     return [
-        _serialize_property_with_mortgage(prop)
+        _serialize_property_with_mortgage(prop, interest_rate, initial_tilgung_rate)
         for prop in filtered
     ]
 
 
-def _serialize_property_with_mortgage(prop: Property) -> dict:
+def _serialize_property_with_mortgage(prop: Property, interest_rate: float, initial_tilgung_rate: float) -> dict:
     schedule, total_interest, total_paid = mortgage_schedule(
         prop.price_eur,
-        INTEREST_RATE,
-        INITIAL_TILGUNG_RATE,
+        interest_rate,
+        initial_tilgung_rate,
         MAX_AMORTIZATION_YEARS,
     )
     mortgage_years = len(schedule)
+    annual_annuity = prop.price_eur * (interest_rate + initial_tilgung_rate)
+    monthly_rate = annual_annuity / 12 if annual_annuity > 0 else 0
     return {
         **asdict(prop),
         "price_per_sqm": prop.price_per_sqm,
@@ -132,6 +135,9 @@ def _serialize_property_with_mortgage(prop: Property) -> dict:
         "mortgage_years": mortgage_years,
         "mortgage_total_interest": round(total_interest, 2),
         "mortgage_total_paid": round(total_paid, 2),
+        "mortgage_monthly_rate": round(monthly_rate, 2),
+        "mortgage_interest_rate": interest_rate,
+        "mortgage_tilgung_rate": initial_tilgung_rate,
     }
 
 
@@ -146,6 +152,8 @@ def list_properties():
     latitude = _parse_float("latitude", 52.52)
     longitude = _parse_float("longitude", 13.405)
     radius = max(_parse_float("radius", 5), 0.1)
+    interest_rate = max(_parse_float("interest_rate", DEFAULT_INTEREST_RATE), 0.0)
+    initial_tilgung_rate = max(_parse_float("tilgung_rate", DEFAULT_TILGUNG_RATE), 0.0001)
 
     payload = _build_property_payload(
         latitude,
@@ -157,8 +165,15 @@ def list_properties():
         max_size,
         min_rooms,
         max_rooms,
+        interest_rate,
+        initial_tilgung_rate,
     )
-    return jsonify({"properties": payload, "count": len(payload)})
+    return jsonify({
+        "properties": payload,
+        "count": len(payload),
+        "interest_rate": interest_rate,
+        "tilgung_rate": initial_tilgung_rate,
+    })
 
 
 def _average_price_per_sqm(base_lat: float, base_lon: float, radius: float, rent: bool = False) -> float:
@@ -177,7 +192,8 @@ def _collect_average_price(latitude: float, longitude: float, radius: float,
                            min_price: float, max_price: float,
                            min_size: float, max_size: float,
                            min_rooms: int, max_rooms: int,
-                           samples: int) -> Tuple[float, int]:
+                           samples: int,
+                           interest_rate: float, initial_tilgung_rate: float) -> Tuple[float, int]:
     observed_values: List[float] = []
     for _ in range(samples):
         payload = _build_property_payload(
@@ -190,6 +206,8 @@ def _collect_average_price(latitude: float, longitude: float, radius: float,
             max_size,
             min_rooms,
             max_rooms,
+            interest_rate,
+            initial_tilgung_rate,
         )
         for prop in payload:
             value = prop.get("price_per_sqm")
@@ -212,6 +230,8 @@ def average_price():
     longitude = _parse_float("longitude", 13.405)
     radius = max(_parse_float("radius", 5), 0.1)
     samples = max(_parse_int("samples", 5), 1)
+    interest_rate = max(_parse_float("interest_rate", DEFAULT_INTEREST_RATE), 0.0)
+    initial_tilgung_rate = max(_parse_float("tilgung_rate", DEFAULT_TILGUNG_RATE), 0.0001)
 
     average_value, observations = _collect_average_price(
         latitude,
@@ -224,6 +244,8 @@ def average_price():
         min_rooms,
         max_rooms,
         samples,
+        interest_rate,
+        initial_tilgung_rate,
     )
 
     return jsonify({
@@ -233,6 +255,8 @@ def average_price():
         "samples": samples,
         "average_price_per_sqm": average_value,
         "observations": observations,
+        "interest_rate": interest_rate,
+        "tilgung_rate": initial_tilgung_rate,
     })
 
 
