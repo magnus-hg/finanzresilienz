@@ -160,19 +160,6 @@ async function fetchCoordinates(query) {
   return { lat: Number(lat), lon: Number(lon), displayName };
 }
 
-async function fetchAveragePurchase(coords, radius) {
-  const params = new URLSearchParams({
-    latitude: coords.lat,
-    longitude: coords.lon,
-    radius,
-  });
-  const response = await fetch(`/average-price?${params.toString()}`);
-  if (!response.ok) {
-    throw new Error('Durchschnittspreise konnten nicht geladen werden.');
-  }
-  return response.json();
-}
-
 async function fetchListings(coords, radius, maxPrice) {
   if (!Number.isFinite(maxPrice) || maxPrice <= 0) {
     return { properties: [] };
@@ -188,6 +175,28 @@ async function fetchListings(coords, radius, maxPrice) {
   if (!response.ok) {
     throw new Error('Beispielangebote konnten nicht geladen werden.');
   }
+  return response.json();
+}
+
+async function fetchAveragePrice(coords, radius, maxPrice, samples = 5) {
+  if (!Number.isFinite(maxPrice) || maxPrice <= 0) {
+    return null;
+  }
+
+  const params = new URLSearchParams({
+    latitude: coords.lat,
+    longitude: coords.lon,
+    radius,
+    min_price: '0',
+    max_price: String(Math.round(maxPrice)),
+    samples: String(samples),
+  });
+
+  const response = await fetch(`/average-price?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error('Durchschnittspreise konnten nicht geladen werden.');
+  }
+
   return response.json();
 }
 
@@ -216,22 +225,35 @@ async function updateMarketInsights({ postalCode, maxPropertyPrice, fromStorage 
 
   try {
     const coords = await fetchCoordinates(`${postalCode}, Deutschland`);
-    const [averageData, listingsData] = await Promise.all([
-      fetchAveragePurchase(coords, MARKET_RADIUS_KM),
+    const [listingsData, averageData] = await Promise.all([
       fetchListings(coords, MARKET_RADIUS_KM, maxPropertyPrice),
+      fetchAveragePrice(coords, MARKET_RADIUS_KM, maxPropertyPrice),
     ]);
 
-    if (averageData && typeof averageData.average_price_per_sqm === 'number') {
-      setAveragePriceDisplay(`${currencyFormatter.format(averageData.average_price_per_sqm)} / m²`);
+    const listings = Array.isArray(listingsData.properties) ? listingsData.properties : [];
+
+    if (
+      averageData &&
+      Number.isFinite(averageData.average_price_per_sqm) &&
+      averageData.average_price_per_sqm > 0
+    ) {
+      setAveragePriceDisplay(
+        `${currencyFormatter.format(Math.round(averageData.average_price_per_sqm))} / m²`,
+      );
+      const observationCount =
+        typeof averageData.observations === 'number' && averageData.observations > 0
+          ? averageData.observations
+          : typeof averageData.samples === 'number'
+            ? averageData.samples
+            : 5;
       setMarketInsightsMessage(
-        `Ø Kaufpreis innerhalb eines Radius von ${MARKET_RADIUS_KM} km um ${postalCode}.`,
+        `Ø Kaufpreis pro m² aus ${observationCount} Angebotswerten (${averageData.samples} Stichproben) im ${MARKET_RADIUS_KM}-km-Radius um ${postalCode}.`,
       );
     } else {
       setAveragePriceDisplay('–');
       setMarketInsightsMessage('Keine Durchschnittspreise verfügbar.');
     }
 
-    const listings = Array.isArray(listingsData.properties) ? listingsData.properties : [];
     if (listings.length === 0) {
       renderListings(
         [],
