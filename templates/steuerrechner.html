@@ -51,6 +51,20 @@
       </article>
     </section>
 
+    <section class="card chart-card">
+      <div class="chart-header">
+        <div>
+          <p class="eyebrow">Steuersätze im Verlauf</p>
+          <h2>Grenz- und Durchschnittssteuersatz im Vergleich</h2>
+          <p class="muted">
+            Die Linien zeigen, wie sich Grenz- und Durchschnittssteuersatz über unterschiedliche zvE entwickeln. Die Markierungen zeigen Ihren aktuellen Punkt.
+          </p>
+        </div>
+      </div>
+      <canvas id="tax-chart" aria-label="Verlauf Grenz- und Durchschnittssteuersatz"></canvas>
+      <p class="chart-note muted">X-Achse: zvE in EUR, Y-Achse: Steuersatz in %.</p>
+    </section>
+
     <section class="card">
       <h2>Wie wird gerechnet?</h2>
       <p class="muted">
@@ -61,6 +75,11 @@
     </section>
   </main>
 
+  <script
+    src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"
+    integrity="sha384-55c6XpW+sEHK3EdSQpSwtMAAPMGAyJStAvXQpAC5gXBmJgrRRPN/Jmp8xNoN6ZrF"
+    crossorigin="anonymous"
+  ></script>
   <script src="{{ url_for('static', filename='js/storage.js') }}"></script>
   <script src="{{ url_for('static', filename='js/steuerrechner.js') }}"></script>
 </body>

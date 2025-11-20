@@ -525,12 +525,44 @@ def calculate_tax():
 
     est, avg_rate, marginal_rate = tax_rates(zve)
 
+    def _tax_curve(max_income: float, step: float = 1_000.0) -> list[dict]:
+        capped_income = max(max_income, 300_000)
+        points = []
+        income = 0.0
+
+        while income <= capped_income:
+            est_point, avg_point, marginal_point = tax_rates(income)
+            points.append(
+                {
+                    "zve": round(income, 2),
+                    "est": round(est_point, 2),
+                    "avg_rate": round(avg_point, 2),
+                    "marginal_rate": round(marginal_point, 2),
+                }
+            )
+            income += step
+
+        if capped_income % step != 0:
+            # Ensure the upper bound is included for consistent chart lines
+            est_point, avg_point, marginal_point = tax_rates(capped_income)
+            points.append(
+                {
+                    "zve": round(capped_income, 2),
+                    "est": round(est_point, 2),
+                    "avg_rate": round(avg_point, 2),
+                    "marginal_rate": round(marginal_point, 2),
+                }
+            )
+
+        return points
+
     return jsonify(
         {
             "zve": zve,
             "est": round(est, 2),
             "avg_rate": round(avg_rate, 2),
             "marginal_rate": round(marginal_rate, 2),
+            "curve": _tax_curve(max_income=zve),
         }
     )
 
