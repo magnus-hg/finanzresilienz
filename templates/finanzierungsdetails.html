@@ -24,6 +24,9 @@
           <a class="broker-button" style="width:auto" href="{{ url_for('mortgage_page') }}">
             ← Zurück zum Immobilienrechner
           </a>
+          <a class="broker-button" style="width:auto" href="{{ url_for('buy_to_let_page') }}">
+            Zurück zum Vermietungsrechner
+          </a>
         </p>
       </header>
 
@@ -54,6 +57,11 @@
           <h2>Monatliche Rate</h2>
           <p id="detail-rate" class="value">–</p>
           <p class="muted">Berechnet aus Zins und Tilgung.</p>
+        </article>
+        <article class="card">
+          <h2>Mieteinnahmen (Schätzung)</h2>
+          <p id="detail-rent" class="value">–</p>
+          <p class="muted" id="detail-rent-meta">Basierend auf Mietspiegeln für vergleichbare Objekte.</p>
         </article>
       </section>
 

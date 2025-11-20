@@ -132,21 +132,42 @@ def _filter_properties(properties: List[Property], min_price: float, max_price: 
     return result
 
 
-def _build_property_payload(latitude: float, longitude: float, radius: float,
-                            min_price: float, max_price: float,
-                            min_size: float, max_size: float,
-                            min_rooms: int, max_rooms: int,
-                            interest_rate: float, initial_tilgung_rate: float,
-                            available_assets: float) -> List[dict]:
+def _estimate_rent(living_space_sqm: float, rent_per_sqm: Optional[float], fallback_rent_per_sqm: float) -> Tuple[float, float]:
+    rent_rate = rent_per_sqm if rent_per_sqm is not None else fallback_rent_per_sqm
+    if rent_rate <= 0 or living_space_sqm <= 0:
+        return 0.0, rent_per_sqm or 0.0
+    monthly_rent = rent_rate * living_space_sqm
+    return round(monthly_rent, 2), rent_rate
+
+
+def _build_property_payload(
+    latitude: float,
+    longitude: float,
+    radius: float,
+    min_price: float,
+    max_price: float,
+    min_size: float,
+    max_size: float,
+    min_rooms: int,
+    max_rooms: int,
+    interest_rate: float,
+    initial_tilgung_rate: float,
+    available_assets: float,
+    additional_cost_rate: float,
+) -> List[dict]:
     properties = _generate_properties(30, latitude, longitude, radius)
     filtered = _filter_properties(properties, min_price, max_price, min_size, max_size, min_rooms, max_rooms)
     filtered.sort(key=lambda prop: prop.price_eur, reverse=True)
+    average_rent_per_sqm = _average_price_per_sqm(latitude, longitude, radius, rent=True)
+
     return [
         _serialize_property_with_mortgage(
             prop,
             interest_rate,
             initial_tilgung_rate,
             available_assets,
+            additional_cost_rate,
+            average_rent_per_sqm,
         )
         for prop in filtered
     ]
@@ -157,11 +178,20 @@ def _serialize_property_with_mortgage(
     interest_rate: float,
     initial_tilgung_rate: float,
     available_assets: float,
+    additional_cost_rate: float,
+    average_rent_per_sqm: float,
 ) -> dict:
     usable_assets = max(available_assets, 0)
-    total_price = prop.price_eur * (1 + ADDITIONAL_COST_RATE)
+    cost_rate = max(additional_cost_rate, 0)
+    total_price = prop.price_eur * (1 + cost_rate)
     additional_costs = total_price - prop.price_eur
     loan_amount = max(total_price - usable_assets, 0)
+
+    estimated_rent_month, used_rent_rate = _estimate_rent(
+        prop.living_space_sqm,
+        prop.rent_per_sqm,
+        average_rent_per_sqm,
+    )
 
     if loan_amount > 0:
         schedule, total_interest, total_paid = mortgage_schedule(
@@ -187,6 +217,7 @@ def _serialize_property_with_mortgage(
         "available_assets": usable_assets,
         "additional_costs_eur": round(additional_costs),
         "total_price_eur": round(total_price),
+        "additional_cost_rate": cost_rate,
         "mortgage_years": mortgage_years,
         "mortgage_total_interest": round(total_interest, 2),
         "mortgage_total_paid": round(total_paid, 2),
@@ -194,6 +225,8 @@ def _serialize_property_with_mortgage(
         "mortgage_interest_rate": interest_rate,
         "mortgage_tilgung_rate": initial_tilgung_rate,
         "mortgage_loan_amount": loan_amount,
+        "estimated_rent_month": estimated_rent_month,
+        "estimated_rent_per_sqm": used_rent_rate,
     }
 
 
@@ -211,6 +244,7 @@ def list_properties():
     interest_rate = max(_parse_float("interest_rate", DEFAULT_INTEREST_RATE), 0.0)
     initial_tilgung_rate = max(_parse_float("tilgung_rate", DEFAULT_TILGUNG_RATE), 0.0001)
     available_assets = max(_parse_float("available_assets", 0.0), 0.0)
+    additional_cost_rate = max(_parse_float("additional_cost_rate", ADDITIONAL_COST_RATE), 0.0)
 
     payload = _build_property_payload(
         latitude,
@@ -225,12 +259,14 @@ def list_properties():
         interest_rate,
         initial_tilgung_rate,
         available_assets,
+        additional_cost_rate,
     )
     return jsonify({
         "properties": payload,
         "count": len(payload),
         "interest_rate": interest_rate,
         "tilgung_rate": initial_tilgung_rate,
+        "additional_cost_rate": additional_cost_rate,
     })
 
 
@@ -246,12 +282,21 @@ def _average_price_per_sqm(base_lat: float, base_lon: float, radius: float, rent
     return round(sum(per_sqm_values) / len(per_sqm_values), 2)
 
 
-def _collect_average_price(latitude: float, longitude: float, radius: float,
-                           min_price: float, max_price: float,
-                           min_size: float, max_size: float,
-                           min_rooms: int, max_rooms: int,
-                           samples: int,
-                           interest_rate: float, initial_tilgung_rate: float) -> Tuple[float, int]:
+def _collect_average_price(
+    latitude: float,
+    longitude: float,
+    radius: float,
+    min_price: float,
+    max_price: float,
+    min_size: float,
+    max_size: float,
+    min_rooms: int,
+    max_rooms: int,
+    samples: int,
+    interest_rate: float,
+    initial_tilgung_rate: float,
+    additional_cost_rate: float,
+) -> Tuple[float, int]:
     observed_values: List[float] = []
     for _ in range(samples):
         payload = _build_property_payload(
@@ -267,6 +312,7 @@ def _collect_average_price(latitude: float, longitude: float, radius: float,
             interest_rate,
             initial_tilgung_rate,
             0.0,
+            additional_cost_rate,
         )
         for prop in payload:
             value = prop.get("price_per_sqm")
@@ -371,6 +417,7 @@ def average_price():
     samples = max(_parse_int("samples", 5), 1)
     interest_rate = max(_parse_float("interest_rate", DEFAULT_INTEREST_RATE), 0.0)
     initial_tilgung_rate = max(_parse_float("tilgung_rate", DEFAULT_TILGUNG_RATE), 0.0001)
+    additional_cost_rate = max(_parse_float("additional_cost_rate", ADDITIONAL_COST_RATE), 0.0)
 
     average_value, observations = _collect_average_price(
         latitude,
@@ -385,6 +432,7 @@ def average_price():
         samples,
         interest_rate,
         initial_tilgung_rate,
+        additional_cost_rate,
     )
 
     return jsonify({
@@ -396,6 +444,7 @@ def average_price():
         "observations": observations,
         "interest_rate": interest_rate,
         "tilgung_rate": initial_tilgung_rate,
+        "additional_cost_rate": additional_cost_rate,
     })
 
 

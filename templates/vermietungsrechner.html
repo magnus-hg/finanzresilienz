@@ -16,11 +16,12 @@
     <main class="container">
       <header>
         <p class="eyebrow">Meine Finanzanalyse</p>
-        <h1>Lohnt sich die Vermietung meiner Immobilie?</h1>
+        <h1>Finde vermietbare Objekte, die zu meinem Budget passen</h1>
         <p>
-          Mit diesem Rechner simulieren Sie, wie sich Kauf, Finanzierung und Vermietung über die
-          nächsten Jahre entwickeln. Wir kombinieren Zins- und Tilgungsplan mit Miete, Kosten,
-          AfA und Steuern und berechnen Ihren Cashflow sowie den Vermögensaufbau aus dem Objekt.
+          Geben Sie nur Ihr verfügbares Vermögen und eine Postleitzahl ein. Wir schlagen passende
+          Immobilien in der Umgebung vor, schätzen die Mieteinnahmen pro Quadratmeter und zeigen,
+          ob Ihr Eigenkapital für den Kauf reicht. Mit einem Klick erhalten Sie die
+          Finanzierungsdetails aus Zins, Tilgung, Restschuld und Mieteinnahmen.
         </p>
         <p>
           <a class="broker-button" style="width:auto" href="{{ url_for('mortgage_page') }}"
@@ -30,155 +31,87 @@
       </header>
 
       <section class="card">
-        <form id="buy-to-let-form" novalidate>
-          <div class="field">
-            <label for="purchase-price">Kaufpreis (EUR)</label>
-            <input type="number" id="purchase-price" name="purchase-price" min="0" step="1000" value="450000" required />
+        <form id="rental-finder-form" novalidate>
+          <div class="form-grid">
+            <div class="input-column">
+              <p class="column-title">Pflichtangaben</p>
+              <div class="field">
+                <label for="rental-assets">Vermögen (EUR)</label>
+                <input type="number" id="rental-assets" name="rental-assets" min="0" step="1000" required />
+              </div>
+              <div class="field">
+                <label for="rental-postal-code">Postleitzahl (PLZ)</label>
+                <input
+                  type="text"
+                  id="rental-postal-code"
+                  name="rental-postal-code"
+                  pattern="\d{5}"
+                  inputmode="numeric"
+                  placeholder="z. B. 10117"
+                  required
+                />
+                <p class="muted">Wir nutzen die PLZ, um verfügbare Objekte und Mietspiegel zu schätzen.</p>
+              </div>
+            </div>
+            <div class="input-column subtle">
+              <p class="column-title">Standardannahmen</p>
+              <div class="field">
+                <label for="rental-interest">Zins p.a. (%)</label>
+                <input type="number" id="rental-interest" name="rental-interest" min="0" step="0.1" value="4" />
+                <p class="muted">Niedrigeingabe möglich, falls Sie ein günstiges Darlehen erwarten.</p>
+              </div>
+              <div class="field">
+                <label for="rental-repayment">Tilgung p.a. (%)</label>
+                <input type="number" id="rental-repayment" name="rental-repayment" min="0.1" step="0.1" value="2" />
+                <p class="muted">Für Vermietungsszenarien oft etwas höher als 1&nbsp;% p.a.</p>
+              </div>
+              <div class="field">
+                <label for="rental-additional-costs">Nebenkosten (%)</label>
+                <input
+                  type="number"
+                  id="rental-additional-costs"
+                  name="rental-additional-costs"
+                  min="0"
+                  step="0.1"
+                  value="10.5"
+                />
+                <p class="muted">Aufschlag für Steuern, Notar, Makler – voreingestellt mit 10,5&nbsp;%.</p>
+              </div>
+            </div>
           </div>
-          <div class="field">
-            <label for="transaction-costs">Nebenkosten (%)</label>
-            <input type="number" id="transaction-costs" name="transaction-costs" min="0" step="0.1" value="10.5" required />
-            <p class="muted">Makler, Grunderwerbsteuer &amp; Notar – Aufschlag auf den Kaufpreis.</p>
-          </div>
-          <div class="field">
-            <label for="value-growth">Wertsteigerung p.a. (%)</label>
-            <input type="number" id="value-growth" name="value-growth" min="0" step="0.1" value="2" required />
-          </div>
-          <div class="field">
-            <label for="depreciation-basis">AfA-Bemessungsgrundlage (EUR)</label>
-            <input type="number" id="depreciation-basis" name="depreciation-basis" min="0" step="1000" value="360000" required />
-          </div>
-          <div class="field">
-            <label for="depreciation-rate">Abschreibungssatz p.a. (%)</label>
-            <input type="number" id="depreciation-rate" name="depreciation-rate" min="0" step="0.1" value="2" required />
-          </div>
-          <div class="field">
-            <label for="loan-principal">Darlehensbetrag (EUR)</label>
-            <input type="number" id="loan-principal" name="loan-principal" min="0" step="1000" value="360000" required />
-          </div>
-          <div class="field">
-            <label for="loan-interest">Zins p.a. (%)</label>
-            <input type="number" id="loan-interest" name="loan-interest" min="0" step="0.1" value="3.5" required />
-          </div>
-          <div class="field">
-            <label for="loan-years">Zinsbindung / Laufzeit (Jahre)</label>
-            <input type="number" id="loan-years" name="loan-years" min="1" step="1" value="25" required />
-          </div>
-          <div class="field">
-            <label for="loan-annuity">Annuität p.a. (EUR, optional)</label>
-            <input type="number" id="loan-annuity" name="loan-annuity" min="0" step="500" placeholder="leer lassen für automatische Berechnung" />
-            <p class="muted">Wenn leer, wird die Annuität anhand Zins und Laufzeit berechnet.</p>
-          </div>
-          <div class="field">
-            <label for="net-cold-rent">Nettokaltmiete pro Monat (EUR)</label>
-            <input type="number" id="net-cold-rent" name="net-cold-rent" min="0" step="50" value="1500" required />
-          </div>
-          <div class="field">
-            <label for="operating-costs">Umlagefähige Nebenkosten pro Monat (EUR)</label>
-            <input type="number" id="operating-costs" name="operating-costs" min="0" step="25" value="220" required />
-          </div>
-          <div class="field">
-            <label for="mgmt-costs">Nicht umlagefähige Bewirtschaftungskosten p.a. (EUR)</label>
-            <input type="number" id="mgmt-costs" name="mgmt-costs" min="0" step="100" value="1200" required />
-          </div>
-          <div class="field">
-            <label for="rent-increase">Mietsteigerung (%)</label>
-            <input type="number" id="rent-increase" name="rent-increase" min="0" step="0.1" value="3" required />
-            <p class="muted">Wir erhöhen die Miete alle X Jahre um diesen Prozentsatz.</p>
-          </div>
-          <div class="field">
-            <label for="rent-interval">Erhöhungsintervall (Jahre)</label>
-            <input type="number" id="rent-interval" name="rent-interval" min="1" step="1" value="3" required />
-          </div>
-          <div class="field">
-            <label for="tax-rate">Steuersatz auf Überschuss (%)</label>
-            <input type="number" id="tax-rate" name="tax-rate" min="0" step="1" value="25" required />
-          </div>
-          <div class="field">
-            <label for="start-year">Startjahr</label>
-            <input type="number" id="start-year" name="start-year" min="2024" step="1" value="2025" required />
-          </div>
-          <div class="field">
-            <label for="n-years">Projektion (Jahre)</label>
-            <input type="number" id="n-years" name="n-years" min="1" max="50" step="1" value="20" required />
-          </div>
-          <button type="submit" class="primary">Vermietung simulieren</button>
+          <button type="submit" class="primary">Vermietbare Objekte anzeigen</button>
         </form>
       </section>
 
       <section class="results-grid">
         <article class="card highlight">
-          <h2>Warmmiete Jahr 1</h2>
-          <p id="warm-rent-year1" class="value">–</p>
-          <p class="muted">Inklusive umlagefähiger Nebenkosten.</p>
+          <h2>Maximaler Kaufpreis aus Eigenkapital</h2>
+          <p id="rental-max-price" class="value">–</p>
+          <p class="muted">Annahme: 20&nbsp;% Eigenkapital plus Nebenkosten müssen gedeckt sein.</p>
         </article>
         <article class="card">
-          <h2>Cashflow Jahr 1</h2>
-          <p id="cashflow-year1" class="value">–</p>
-          <p class="muted">Warmmiete minus Bewirtschaftungskosten, Zins &amp; Tilgung.</p>
+          <h2>Ø Kaltmiete pro m²</h2>
+          <p id="average-rent" class="value">–</p>
+          <p class="muted">Aus zufälligen Angeboten im Umkreis geschätzt.</p>
         </article>
         <article class="card">
-          <h2>Cashflow nach Steuern</h2>
-          <p id="cashflow-after-tax" class="value">–</p>
-          <p class="muted">Jahr 1 inklusive pauschaler Steuer auf Überschüsse.</p>
+          <h2>Gefundene Objekte</h2>
+          <p id="listing-count" class="value">–</p>
+          <p class="muted" id="listing-summary">Noch keine Suche gestartet.</p>
         </article>
       </section>
 
-      <section class="results-grid">
-        <article class="card">
-          <h2>Eigenkapital am Laufzeitende</h2>
-          <p id="equity-final" class="value">–</p>
-          <p class="muted">Immobilienwert minus Restschuld nach der Simulation.</p>
-        </article>
-        <article class="card">
-          <h2>Restschuld am Laufzeitende</h2>
-          <p id="loan-rest-final" class="value">–</p>
-          <p class="muted">Aus dem Zins- und Tilgungsplan.</p>
-        </article>
-        <article class="card">
-          <h2>Immobilienwert am Laufzeitende</h2>
-          <p id="property-value-final" class="value">–</p>
-          <p class="muted">Basierend auf der angenommenen Wertsteigerung.</p>
-        </article>
-      </section>
-
-      <section class="card result-card" id="result-note">
-        <h2>Projektion &amp; Interpretation</h2>
-        <p class="muted" id="result-message">
-          Füllen Sie das Formular aus, um Cashflows, Steuern und Vermögensaufbau zu berechnen.
+      <section class="card market-insights">
+        <h2>Passende Angebote &amp; Mieteinnahmen</h2>
+        <p class="muted" id="rental-message">
+          Geben Sie Ihr Vermögen und Ihre PLZ ein, um passende Objekte inklusive geschätzter Mieteinnahmen zu laden.
         </p>
-      </section>
-
-      <section class="card">
-        <div class="table-header">
-          <div>
-            <h2>Jährliche Projektion</h2>
-            <p class="muted">Warmmiete, Finanzierung, Steuern und Cashflow im Zeitverlauf.</p>
+        <div class="listings">
+          <div class="listings-header">
+            <h3>Verfügbare Immobilien</h3>
+            <p class="muted" id="rental-listings-message">Es wurden noch keine Immobilien berechnet.</p>
           </div>
-          <div class="badge-group">
-            <span class="badge" id="total-investment">–</span>
-            <span class="badge" id="total-after-tax">–</span>
-          </div>
-        </div>
-        <div class="table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Jahr</th>
-                <th>Warmmiete p.a.</th>
-                <th>Zinsen</th>
-                <th>Tilgung</th>
-                <th>Steuern</th>
-                <th>Cashflow n. Steuer</th>
-                <th>Eigenkapital</th>
-              </tr>
-            </thead>
-            <tbody id="projection-body">
-              <tr>
-                <td colspan="7" class="muted">Noch keine Simulation durchgeführt.</td>
-              </tr>
-            </tbody>
-          </table>
+          <ul class="listing-results" id="rental-listing-results"></ul>
         </div>
       </section>
 
