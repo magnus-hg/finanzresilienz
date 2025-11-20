@@ -33,6 +33,7 @@ const rentalGrossYield = document.getElementById('rental-gross-yield');
 const rentalOutlook = document.getElementById('rental-outlook');
 const RENT_GROWTH_RATE = 0.02;
 const PROPERTY_GROWTH_RATE = 0.02;
+const START_YEAR = new Date().getFullYear();
 let chartInstance = null;
 let assetChartInstance = null;
 let currentSchedule = [];
@@ -108,6 +109,10 @@ function calculateSchedule(principal, interestRate, tilgungRate, maxYears = 100)
 
 function isRentalScenario(property) {
   return property.property_usage === 'rental';
+}
+
+function buildYearLabels(schedule, startYear = START_YEAR) {
+  return schedule.map((item) => `${startYear + item.year - 1}`);
 }
 
 function renderFinancingMessage(property) {
@@ -308,7 +313,7 @@ function buildChartData(schedule, options = {}) {
   }
 
   return {
-    labels: schedule.map((item) => `Jahr ${item.year}`),
+    labels: buildYearLabels(schedule),
     datasets,
   };
 }
@@ -435,7 +440,7 @@ function buildAssetProgressData(schedule, property) {
   }
 
   return {
-    labels: schedule.map((item) => `Jahr ${item.year}`),
+    labels: buildYearLabels(schedule),
     datasets,
   };
 }
