@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finanzierungsdetails</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <p class="eyebrow">Meine Finanzanalyse</p>
+        <h1>Finanzierungsdetails</h1>
+        <p id="property-summary" class="muted">
+          Die gewählten Finanzierungsdetails werden geladen …
+        </p>
+        <p>
+          <a class="broker-button" style="width:auto" href="{{ url_for('mortgage_page') }}">
+            ← Zurück zum Immobilienrechner
+          </a>
+        </p>
+      </header>
+
+      <section id="financing-status" class="card result-card">
+        <h2>Finanzierungsfähigkeit</h2>
+        <p id="financing-message" class="muted">
+          Wir prüfen, ob Sie das Objekt direkt kaufen können oder eine Finanzierung benötigen.
+        </p>
+      </section>
+
+      <section class="results-grid" id="financing-stats">
+        <article class="card">
+          <h2>Kaufpreis</h2>
+          <p id="detail-price" class="value">–</p>
+          <p class="muted">Gesamtpreis des ausgewählten Objekts.</p>
+        </article>
+        <article class="card">
+          <h2>Eigenkapital</h2>
+          <p id="detail-assets" class="value">–</p>
+          <p class="muted">Verfügbares Vermögen laut Ihrer Eingaben.</p>
+        </article>
+        <article class="card">
+          <h2>Darlehensbetrag</h2>
+          <p id="detail-loan" class="value">–</p>
+          <p class="muted">Benötigte Finanzierung nach Eigenkapitaleinsatz.</p>
+        </article>
+        <article class="card">
+          <h2>Monatliche Rate</h2>
+          <p id="detail-rate" class="value">–</p>
+          <p class="muted">Berechnet aus Zins und Tilgung.</p>
+        </article>
+      </section>
+
+      <section class="card chart-card">
+        <div class="chart-header">
+          <div>
+            <h2>Verlauf von Zins, Tilgung und Restschuld</h2>
+            <p class="muted">
+              Wir zeigen, wie sich Ihre jährliche Zins- und Tilgungsleistung verändert und wie schnell die Restschuld sinkt.
+            </p>
+          </div>
+          <div class="badge-group">
+            <span id="badge-loan" class="badge">–</span>
+            <span id="badge-duration" class="badge">–</span>
+          </div>
+        </div>
+        <canvas id="financing-chart" aria-label="Verlauf Zins, Tilgung, Restschuld"></canvas>
+        <p class="chart-note muted">
+          Grundlage ist eine Annuitätenfinanzierung mit den von Ihnen gewählten Parametern. Die Werte beziehen sich auf Jahresraten.
+        </p>
+      </section>
+    </main>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script src="{{ url_for('static', filename='js/storage.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/finanzierungsdetails.js') }}"></script>
+  </body>
+</html>
