@@ -314,6 +314,12 @@ button:hover {
   font-size: 1.2rem;
   font-weight: 600;
 }
+
+.listing-total {
+  margin-left: 0.75rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
 .mortgage-title {
   margin: 0;
   font-weight: 600;
