@@ -262,7 +262,7 @@ function renderListings(listings, fallbackMessage, options = {}) {
         property_usage: 'owner-occupied',
       };
       sessionStorage.setItem('selectedPropertyDetails', JSON.stringify(payload));
-      window.location.href = '/finanzierungsdetails';
+      window.location.href = '/finanzierungsdetails/eigenheim';
     });
 
     actions.append(mockupLink, detailsButton);
