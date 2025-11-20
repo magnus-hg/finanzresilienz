@@ -30,6 +30,9 @@ const rentalCoverageMeta = document.getElementById('rental-coverage-meta');
 const rentalGrossYield = document.getElementById('rental-gross-yield');
 const rentalOutlook = document.getElementById('rental-outlook');
 const RENT_GROWTH_RATE = 0.02;
+let chartInstance = null;
+let currentSchedule = [];
+let currentProperty = null;
 
 function deriveTotalPrice(property) {
   const totalPrice = Number(property.total_price_eur);
@@ -248,6 +251,7 @@ function setView(view, property) {
   });
 
   updateViewDescription(view, property);
+  renderChart(currentSchedule, property, view);
 }
 
 function buildChartData(schedule, options = {}) {
@@ -299,8 +303,13 @@ function buildChartData(schedule, options = {}) {
   };
 }
 
-function renderChart(schedule, property) {
+function renderChart(schedule, property, view) {
   if (!chartCanvas || schedule.length === 0) return;
+
+  if (chartInstance) {
+    chartInstance.destroy();
+    chartInstance = null;
+  }
 
   const rentalScenario = isRentalScenario(property);
   const annualRent =
@@ -309,13 +318,13 @@ function renderChart(schedule, property) {
       : 0;
   const chartData = buildChartData(schedule, {
     annualRent,
-    showRentLine: rentalScenario,
+    showRentLine: view === 'rental' && rentalScenario,
     rentGrowthRate: RENT_GROWTH_RATE,
   });
   const ctx = chartCanvas.getContext('2d');
   if (!ctx) return;
 
-  return new Chart(ctx, {
+  chartInstance = new Chart(ctx, {
     data: chartData,
     options: {
       responsive: true,
@@ -364,9 +373,11 @@ function initFinancingDetails() {
     property.mortgage_tilgung_rate,
   );
   renderBadges(property, schedule);
-  renderChart(schedule, property);
+  currentSchedule = schedule;
+  currentProperty = property;
 
   const defaultView = isRentalScenario(property) ? 'rental' : 'owner';
+  renderChart(currentSchedule, currentProperty, defaultView);
   setView(defaultView, property);
   viewButtons.forEach((button) => {
     button.addEventListener('click', () => setView(button.dataset.viewButton, property));
