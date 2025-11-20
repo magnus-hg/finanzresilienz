@@ -154,6 +154,7 @@ def _serialize_property_with_mortgage(
         **asdict(prop),
         "price_per_sqm": prop.price_per_sqm,
         "rent_per_sqm": prop.rent_per_sqm,
+        "available_assets": usable_assets,
         "mortgage_years": mortgage_years,
         "mortgage_total_interest": round(total_interest, 2),
         "mortgage_total_paid": round(total_paid, 2),
@@ -313,6 +314,11 @@ def mortgage_page():
 @app.route("/wohnungssuche")
 def housing_page():
     return render_template("wohnungssuche.html")
+
+
+@app.route("/finanzierungsdetails")
+def financing_details_page():
+    return render_template("finanzierungsdetails.html")
 
 
 if __name__ == "__main__":

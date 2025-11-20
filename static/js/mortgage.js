@@ -108,7 +108,7 @@ function setAveragePriceDisplay(valueText) {
 }
 
 function renderListings(listings, fallbackMessage, options = {}) {
-  const { maxPropertyPrice } = options;
+  const { maxPropertyPrice, availableAssets = 0 } = options;
   if (!listingResults) return;
   listingResults.innerHTML = '';
 
@@ -141,17 +141,28 @@ function renderListings(listings, fallbackMessage, options = {}) {
     price.textContent = currencyFormatter.format(property.price_eur);
     header.append(price);
 
-    if (Number.isFinite(maxPropertyPrice)) {
-      const affordable = property.price_eur <= maxPropertyPrice;
+    const canBuyDirectly = availableAssets >= property.price_eur;
+    const isWithinBudget = Number.isFinite(maxPropertyPrice) ? property.price_eur <= maxPropertyPrice : true;
+    const needsMortgage = !canBuyDirectly && property.mortgage_loan_amount > 0;
 
-      if (!affordable) {
-        const affordability = document.createElement('span');
-        affordability.className = 'listing-affordability not-affordable';
-        affordability.textContent = 'Über Budget';
-        affordability.title = 'Preis übersteigt Ihren maximalen Immobilienpreis';
-        header.append(affordability);
-      }
+    const affordability = document.createElement('span');
+    affordability.className = 'listing-affordability';
+
+    if (canBuyDirectly) {
+      affordability.textContent = 'Direktkauf möglich';
+      affordability.classList.add('direct');
+      affordability.title = 'Ihr Eigenkapital deckt den gesamten Kaufpreis.';
+    } else if (needsMortgage && isWithinBudget) {
+      affordability.textContent = 'Finanzierung möglich';
+      affordability.classList.add('mortgage-needed');
+      affordability.title = 'Finanzierung erforderlich, aber innerhalb Ihrer Budgetvorgaben.';
+    } else {
+      affordability.textContent = 'Über Budget';
+      affordability.classList.add('not-affordable');
+      affordability.title = 'Preis übersteigt Ihren maximalen Immobilienpreis.';
     }
+
+    header.append(affordability);
 
     details.append(header);
 
@@ -178,7 +189,21 @@ function renderListings(listings, fallbackMessage, options = {}) {
     mockupLink.target = '_blank';
     mockupLink.rel = 'noreferrer noopener';
     mockupLink.textContent = 'Exposé ansehen';
-    actions.append(mockupLink);
+
+    const detailsButton = document.createElement('button');
+    detailsButton.type = 'button';
+    detailsButton.className = 'listing-button';
+    detailsButton.textContent = 'Finanzierungsdetails';
+    detailsButton.addEventListener('click', () => {
+      const payload = {
+        ...property,
+        available_assets: availableAssets,
+      };
+      sessionStorage.setItem('selectedPropertyDetails', JSON.stringify(payload));
+      window.location.href = '/finanzierungsdetails';
+    });
+
+    actions.append(mockupLink, detailsButton);
     details.append(actions);
 
     item.append(details);
@@ -387,16 +412,19 @@ async function updateMarketInsights({
       renderListings(
         [],
         'Keine passenden Beispielangebote gefunden. Bitte passen Sie Ihr Budget oder die PLZ an.',
-        { maxPropertyPrice },
+        { maxPropertyPrice, availableAssets: sanitizedAssets },
       );
     } else {
-      renderListings(listings, '', { maxPropertyPrice });
+      renderListings(listings, '', { maxPropertyPrice, availableAssets: sanitizedAssets });
     }
   } catch (error) {
     console.error(error);
     setMarketInsightsMessage(error.message || 'Marktdaten konnten nicht geladen werden.');
     setAveragePriceDisplay('–');
-    renderListings([], 'Marktdaten konnten nicht geladen werden.', { maxPropertyPrice });
+    renderListings([], 'Marktdaten konnten nicht geladen werden.', {
+      maxPropertyPrice,
+      availableAssets: sanitizedAssets,
+    });
   }
 }
 
