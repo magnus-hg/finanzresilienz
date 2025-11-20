@@ -247,7 +247,7 @@ function renderListings(listings, options) {
         property_usage: 'rental',
       };
       sessionStorage.setItem('selectedPropertyDetails', JSON.stringify(payload));
-      window.location.href = '/finanzierungsdetails';
+      window.location.href = '/finanzierungsdetails/vermietung';
     });
 
     actions.append(mockupLink, detailsButton);

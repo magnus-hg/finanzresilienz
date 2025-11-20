@@ -2,7 +2,7 @@ import random
 from dataclasses import dataclass, asdict
 from typing import List, Optional, Tuple
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 from buy_to_let_model import (
     LoanParams,
@@ -509,7 +509,17 @@ def housing_page():
 
 @app.route("/finanzierungsdetails")
 def financing_details_page():
-    return render_template("finanzierungsdetails.html")
+    return redirect(url_for("financing_details_owner"))
+
+
+@app.route("/finanzierungsdetails/eigenheim")
+def financing_details_owner():
+    return render_template("finanzierungsdetails_eigenheim.html")
+
+
+@app.route("/finanzierungsdetails/vermietung")
+def financing_details_rental():
+    return render_template("finanzierungsdetails_vermietung.html")
 
 
 @app.route("/vermietungsrechner")

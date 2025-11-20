@@ -22,6 +22,7 @@ const detailRentMeta = document.getElementById('detail-rent-meta');
 const badgeLoan = document.getElementById('badge-loan');
 const badgeDuration = document.getElementById('badge-duration');
 const chartCanvas = document.getElementById('financing-chart');
+const detailMode = document.body?.dataset?.detailMode || 'combined';
 const viewDescription = document.getElementById('view-description');
 const viewButtons = document.querySelectorAll('[data-view-button]');
 const viewSections = document.querySelectorAll('.view-section');
@@ -236,7 +237,12 @@ function updateViewDescription(view, property) {
   const dataOrigin = isRentalScenario(property)
     ? 'Das Objekt wurde mit Vermietungsparametern berechnet.'
     : 'Das Objekt wurde mit Parametern zur Eigennutzung berechnet.';
-  viewDescription.textContent = `${scenarioText} ${dataOrigin}`;
+  const fixedContext = detailMode === 'owner'
+    ? 'Die Seite konzentriert sich auf die Eigennutzung.'
+    : detailMode === 'rental'
+      ? 'Die Seite konzentriert sich auf die Vermietung.'
+      : '';
+  viewDescription.textContent = `${scenarioText} ${dataOrigin} ${fixedContext}`.trim();
 }
 
 function setView(view, property) {
@@ -377,8 +383,11 @@ function initFinancingDetails() {
   currentProperty = property;
 
   const defaultView = isRentalScenario(property) ? 'rental' : 'owner';
-  renderChart(currentSchedule, currentProperty, defaultView);
-  setView(defaultView, property);
+  const enforcedView = detailMode === 'owner' || detailMode === 'rental'
+    ? detailMode
+    : defaultView;
+  renderChart(currentSchedule, currentProperty, enforcedView);
+  setView(enforcedView, property);
   viewButtons.forEach((button) => {
     button.addEventListener('click', () => setView(button.dataset.viewButton, property));
   });
