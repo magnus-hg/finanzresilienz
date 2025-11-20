@@ -22,6 +22,7 @@ const detailRentMeta = document.getElementById('detail-rent-meta');
 const badgeLoan = document.getElementById('badge-loan');
 const badgeDuration = document.getElementById('badge-duration');
 const chartCanvas = document.getElementById('financing-chart');
+const assetChartCanvas = document.getElementById('asset-chart');
 const detailMode = document.body?.dataset?.detailMode || 'combined';
 const viewDescription = document.getElementById('view-description');
 const viewButtons = document.querySelectorAll('[data-view-button]');
@@ -31,7 +32,9 @@ const rentalCoverageMeta = document.getElementById('rental-coverage-meta');
 const rentalGrossYield = document.getElementById('rental-gross-yield');
 const rentalOutlook = document.getElementById('rental-outlook');
 const RENT_GROWTH_RATE = 0.02;
+const PROPERTY_GROWTH_RATE = 0.02;
 let chartInstance = null;
+let assetChartInstance = null;
 let currentSchedule = [];
 let currentProperty = null;
 
@@ -258,6 +261,7 @@ function setView(view, property) {
 
   updateViewDescription(view, property);
   renderChart(currentSchedule, property, view);
+  renderAssetChart(currentSchedule, property);
 }
 
 function buildChartData(schedule, options = {}) {
@@ -359,6 +363,125 @@ function renderChart(schedule, property, view) {
   });
 }
 
+function buildAssetProgressData(schedule, property) {
+  const purchasePrice = Number(property.price_eur) || 0;
+  const availableAssets = Number(property.available_assets) || 0;
+  const additionalCosts = Number(property.additional_costs_eur) || 0;
+  const baseAssets = Math.round(availableAssets - additionalCosts);
+  const rentalScenario = isRentalScenario(property);
+  const annualRent =
+    rentalScenario && Number.isFinite(property.estimated_rent_month)
+      ? property.estimated_rent_month * 12
+      : 0;
+
+  let cumulativePrincipal = 0;
+  let cumulativeGrowth = 0;
+  let cumulativeRent = 0;
+
+  const baseSeries = [];
+  const principalSeries = [];
+  const growthSeries = [];
+  const rentSeries = [];
+
+  schedule.forEach((item, index) => {
+    cumulativePrincipal += Number(item.principalPaid) || 0;
+    cumulativeGrowth = purchasePrice * ((1 + PROPERTY_GROWTH_RATE) ** (index + 1) - 1);
+
+    if (annualRent > 0) {
+      const rentThisYear = annualRent * (1 + RENT_GROWTH_RATE) ** index;
+      cumulativeRent += rentThisYear;
+    }
+
+    baseSeries.push(baseAssets);
+    principalSeries.push(Math.round(cumulativePrincipal));
+    growthSeries.push(Math.round(cumulativeGrowth));
+    if (annualRent > 0) {
+      rentSeries.push(Math.round(cumulativeRent));
+    }
+  });
+
+  const datasets = [
+    {
+      type: 'bar',
+      label: 'Startvermögen nach Nebenkosten',
+      data: baseSeries,
+      backgroundColor: 'rgba(59, 130, 246, 0.25)',
+      stack: 'wealth',
+    },
+    {
+      type: 'bar',
+      label: 'Kumulierte Tilgung',
+      data: principalSeries,
+      backgroundColor: 'rgba(16, 185, 129, 0.7)',
+      stack: 'wealth',
+    },
+    {
+      type: 'bar',
+      label: 'Wertzuwachs (2 % p.a.)',
+      data: growthSeries,
+      backgroundColor: 'rgba(234, 179, 8, 0.7)',
+      stack: 'wealth',
+    },
+  ];
+
+  if (rentSeries.length > 0) {
+    datasets.push({
+      type: 'bar',
+      label: 'Kumulierte Mieteinnahmen',
+      data: rentSeries,
+      backgroundColor: 'rgba(168, 85, 247, 0.55)',
+      stack: 'wealth',
+    });
+  }
+
+  return {
+    labels: schedule.map((item) => `Jahr ${item.year}`),
+    datasets,
+  };
+}
+
+function renderAssetChart(schedule, property) {
+  if (!assetChartCanvas || schedule.length === 0) return;
+
+  if (assetChartInstance) {
+    assetChartInstance.destroy();
+    assetChartInstance = null;
+  }
+
+  const ctx = assetChartCanvas.getContext('2d');
+  if (!ctx) return;
+
+  const chartData = buildAssetProgressData(schedule, property);
+
+  assetChartInstance = new Chart(ctx, {
+    data: chartData,
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const value = context.parsed.y;
+              return `${context.dataset.label}: ${currencyFormatter.format(value)}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: { stacked: true },
+        y: {
+          stacked: true,
+          title: { display: true, text: 'Kumulierte Vermögensbestandteile (EUR)' },
+          ticks: {
+            callback: (value) => currencyFormatter.format(value),
+          },
+        },
+      },
+    },
+  });
+}
+
 function initFinancingDetails() {
   const property = loadSelectedProperty();
   if (!property) {
@@ -387,6 +510,7 @@ function initFinancingDetails() {
     ? detailMode
     : defaultView;
   renderChart(currentSchedule, currentProperty, enforcedView);
+  renderAssetChart(currentSchedule, currentProperty);
   setView(enforcedView, property);
   viewButtons.forEach((button) => {
     button.addEventListener('click', () => setView(button.dataset.viewButton, property));
