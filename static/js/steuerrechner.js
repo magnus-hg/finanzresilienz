@@ -4,6 +4,8 @@
   const taxAmountEl = document.getElementById('tax-amount');
   const avgRateEl = document.getElementById('avg-rate');
   const marginalRateEl = document.getElementById('marginal-rate');
+  const chartCanvas = document.getElementById('tax-chart');
+  let taxChart;
 
   const currencyFormatter = new Intl.NumberFormat('de-DE', {
     style: 'currency',
@@ -13,6 +15,121 @@
 
   function formatPercentage(value) {
     return `${value.toFixed(2)} %`;
+  }
+
+  function buildChart(curve = [], currentZve = 0, avgRate = 0, marginalRate = 0) {
+    if (!chartCanvas || typeof Chart === 'undefined') return;
+
+    const avgDataset = curve.map((point) => ({ x: point.zve, y: point.avg_rate }));
+    const marginalDataset = curve.map((point) => ({ x: point.zve, y: point.marginal_rate }));
+
+    const userAvgPoint = [{ x: currentZve, y: avgRate }];
+    const userMarginalPoint = [{ x: currentZve, y: marginalRate }];
+
+    const data = {
+      datasets: [
+        {
+          label: 'Durchschnittssteuersatz',
+          data: avgDataset,
+          borderColor: '#2E7CF6',
+          backgroundColor: 'rgba(46, 124, 246, 0.08)',
+          pointRadius: 0,
+          borderWidth: 2,
+          tension: 0.2,
+        },
+        {
+          label: 'Grenzsteuersatz',
+          data: marginalDataset,
+          borderColor: '#FF8C42',
+          backgroundColor: 'rgba(255, 140, 66, 0.08)',
+          pointRadius: 0,
+          borderWidth: 2,
+          borderDash: [6, 3],
+          tension: 0.2,
+        },
+        {
+          label: 'Ihr Durchschnittssteuersatz',
+          data: userAvgPoint,
+          borderColor: '#1B4F9C',
+          backgroundColor: '#1B4F9C',
+          pointRadius: 6,
+          pointHoverRadius: 7,
+          type: 'scatter',
+        },
+        {
+          label: 'Ihr Grenzsteuersatz',
+          data: userMarginalPoint,
+          borderColor: '#C55B11',
+          backgroundColor: '#C55B11',
+          pointRadius: 6,
+          pointHoverRadius: 7,
+          type: 'scatter',
+        },
+      ],
+    };
+
+    const options = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'nearest',
+        intersect: false,
+      },
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const value = context.parsed.y ?? 0;
+              const income = context.parsed.x ?? 0;
+              return `${context.dataset.label}: ${formatPercentage(value)} bei ${income.toLocaleString('de-DE')} €`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          title: {
+            display: true,
+            text: 'Zu versteuerndes Einkommen (EUR)',
+          },
+          ticks: {
+            callback(value) {
+              return Number(value).toLocaleString('de-DE');
+            },
+          },
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Steuersatz (%)',
+          },
+          suggestedMin: 0,
+          suggestedMax: 50,
+          ticks: {
+            callback(value) {
+              return `${value} %`;
+            },
+          },
+        },
+      },
+    };
+
+    if (taxChart) {
+      taxChart.data = data;
+      taxChart.options = options;
+      taxChart.update();
+      return;
+    }
+
+    taxChart = new Chart(chartCanvas, {
+      type: 'line',
+      data,
+      options,
+    });
   }
 
   function populateFromStorage() {
@@ -48,6 +165,7 @@
       avgRateEl.textContent = formatPercentage(data.avg_rate);
       marginalRateEl.textContent = formatPercentage(data.marginal_rate);
 
+      buildChart(data.curve, data.zve, data.avg_rate, data.marginal_rate);
       window.userDataStore?.save?.({ zve });
     } catch (error) {
       console.error(error);
