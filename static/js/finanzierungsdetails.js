@@ -21,6 +21,25 @@ const badgeLoan = document.getElementById('badge-loan');
 const badgeDuration = document.getElementById('badge-duration');
 const chartCanvas = document.getElementById('financing-chart');
 
+function deriveTotalPrice(property) {
+  const totalPrice = Number(property.total_price_eur);
+  const additionalCosts = Number(property.additional_costs_eur);
+
+  if (Number.isFinite(totalPrice)) {
+    return totalPrice;
+  }
+
+  if (Number.isFinite(additionalCosts) && Number.isFinite(property.price_eur)) {
+    return property.price_eur + additionalCosts;
+  }
+
+  if (Number.isFinite(property.price_eur)) {
+    return property.price_eur * 1.105;
+  }
+
+  return NaN;
+}
+
 function loadSelectedProperty() {
   const stored = sessionStorage.getItem(PROPERTY_STORAGE_KEY);
   if (!stored) return null;
@@ -70,9 +89,10 @@ function calculateSchedule(principal, interestRate, tilgungRate, maxYears = 100)
   return schedule;
 }
 
-function renderFinancingMessage({ price_eur, available_assets, mortgage_loan_amount }) {
-  const canBuyDirectly = price_eur <= available_assets;
-  const needsMortgage = mortgage_loan_amount > 0;
+function renderFinancingMessage(property) {
+  const totalPrice = deriveTotalPrice(property);
+  const canBuyDirectly = Number.isFinite(totalPrice) && totalPrice <= property.available_assets;
+  const needsMortgage = property.mortgage_loan_amount > 0;
 
   financingStatus.classList.remove('result-positive', 'result-negative');
   financingStatus.classList.add(canBuyDirectly ? 'result-positive' : 'result-negative');
@@ -99,7 +119,12 @@ function renderBadges(property, schedule) {
 }
 
 function renderStats(property) {
-  detailPrice.textContent = currencyFormatter.format(property.price_eur || 0);
+  const totalPrice = deriveTotalPrice(property);
+  const basePriceText = currencyFormatter.format(property.price_eur || 0);
+  const totalPriceText = Number.isFinite(totalPrice)
+    ? currencyFormatter.format(Math.round(totalPrice))
+    : currencyFormatter.format(property.price_eur || 0);
+  detailPrice.textContent = `${basePriceText} (≈ ${totalPriceText} inkl. Nebenkosten)`;
   detailAssets.textContent = currencyFormatter.format(property.available_assets || 0);
   detailLoan.textContent = currencyFormatter.format(property.mortgage_loan_amount || 0);
   detailRate.textContent = currencyFormatter.format(property.mortgage_monthly_rate || 0);

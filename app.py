@@ -8,6 +8,7 @@ from utils import MAX_AMORTIZATION_YEARS, mortgage_schedule
 
 DEFAULT_INTEREST_RATE = 0.01
 DEFAULT_TILGUNG_RATE = 0.04
+ADDITIONAL_COST_RATE = 0.105
 
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -131,7 +132,9 @@ def _serialize_property_with_mortgage(
     available_assets: float,
 ) -> dict:
     usable_assets = max(available_assets, 0)
-    loan_amount = max(prop.price_eur - usable_assets, 0)
+    total_price = prop.price_eur * (1 + ADDITIONAL_COST_RATE)
+    additional_costs = total_price - prop.price_eur
+    loan_amount = max(total_price - usable_assets, 0)
 
     if loan_amount > 0:
         schedule, total_interest, total_paid = mortgage_schedule(
@@ -155,6 +158,8 @@ def _serialize_property_with_mortgage(
         "price_per_sqm": prop.price_per_sqm,
         "rent_per_sqm": prop.rent_per_sqm,
         "available_assets": usable_assets,
+        "additional_costs_eur": round(additional_costs),
+        "total_price_eur": round(total_price),
         "mortgage_years": mortgage_years,
         "mortgage_total_interest": round(total_interest, 2),
         "mortgage_total_paid": round(total_paid, 2),

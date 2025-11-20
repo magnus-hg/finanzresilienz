@@ -30,6 +30,25 @@ const currencyFormatter = new Intl.NumberFormat('de-DE', {
 
 const savedUserData = window.userDataStore ? userDataStore.load() : {};
 
+function deriveTotalPrice(property) {
+  const additionalCosts = Number(property.additional_costs_eur);
+  const totalPrice = Number(property.total_price_eur);
+
+  if (Number.isFinite(totalPrice)) {
+    return totalPrice;
+  }
+
+  if (Number.isFinite(additionalCosts) && Number.isFinite(property.price_eur)) {
+    return property.price_eur + additionalCosts;
+  }
+
+  if (Number.isFinite(property.price_eur)) {
+    return property.price_eur * (1 + ADDITIONAL_COST_RATE);
+  }
+
+  return NaN;
+}
+
 function populateInitialValues() {
   if (typeof savedUserData.monthlyRate === 'number') {
     budgetInput.value = savedUserData.monthlyRate;
@@ -87,11 +106,13 @@ function calculateAffordableValues(budget, assets, interestRate, repaymentRate) 
   const possibleLoan = (budget * 12) / yearlyRate;
   const totalAffordable = possibleLoan + assets;
   const maxPropertyPrice = totalAffordable / (1 + ADDITIONAL_COST_RATE);
+  const maxTotalCost = maxPropertyPrice * (1 + ADDITIONAL_COST_RATE);
 
   return {
     possibleLoan,
     totalAffordable,
     maxPropertyPrice,
+    maxTotalCost,
   };
 }
 
@@ -108,7 +129,7 @@ function setAveragePriceDisplay(valueText) {
 }
 
 function renderListings(listings, fallbackMessage, options = {}) {
-  const { maxPropertyPrice, availableAssets = 0 } = options;
+  const { maxPropertyPrice, maxTotalCost, availableAssets = 0 } = options;
   if (!listingResults) return;
   listingResults.innerHTML = '';
 
@@ -138,11 +159,30 @@ function renderListings(listings, fallbackMessage, options = {}) {
 
     const price = document.createElement('p');
     price.className = 'listing-price';
-    price.textContent = currencyFormatter.format(property.price_eur);
+    const totalPrice = deriveTotalPrice(property);
+    const basePriceText = currencyFormatter.format(property.price_eur);
+    const totalPriceText = Number.isFinite(totalPrice)
+      ? currencyFormatter.format(Math.round(totalPrice))
+      : '–';
+    price.textContent = basePriceText;
+
+    const totalPriceBadge = document.createElement('span');
+    totalPriceBadge.className = 'listing-total';
+    totalPriceBadge.textContent = `≈ ${totalPriceText} inkl. NK`;
+
     header.append(price);
 
-    const canBuyDirectly = availableAssets >= property.price_eur;
-    const isWithinBudget = Number.isFinite(maxPropertyPrice) ? property.price_eur <= maxPropertyPrice : true;
+    if (Number.isFinite(totalPrice)) {
+      header.append(totalPriceBadge);
+    }
+
+    const priceCap = Number.isFinite(maxTotalCost)
+      ? maxTotalCost
+      : Number.isFinite(maxPropertyPrice)
+        ? maxPropertyPrice * (1 + ADDITIONAL_COST_RATE)
+        : NaN;
+    const canBuyDirectly = Number.isFinite(totalPrice) && availableAssets >= totalPrice;
+    const isWithinBudget = Number.isFinite(priceCap) ? totalPrice <= priceCap : true;
     const needsMortgage = !canBuyDirectly && property.mortgage_loan_amount > 0;
 
     const affordability = document.createElement('span');
@@ -341,6 +381,7 @@ async function fetchAveragePrice(coords, radius, maxPrice, samples = 5) {
 async function updateMarketInsights({
   postalCode,
   maxPropertyPrice,
+  maxTotalCost,
   rates = {},
   availableAssets = 0,
   fromStorage = false,
@@ -376,6 +417,11 @@ async function updateMarketInsights({
       : DEFAULT_REPAYMENT_PERCENT / 100,
   };
   const sanitizedAssets = Number.isFinite(availableAssets) ? Math.max(availableAssets, 0) : 0;
+  const totalCostCap = Number.isFinite(maxTotalCost)
+    ? maxTotalCost
+    : Number.isFinite(maxPropertyPrice)
+      ? maxPropertyPrice * (1 + ADDITIONAL_COST_RATE)
+      : NaN;
 
   try {
     const coords = await fetchCoordinates(`${postalCode}, Deutschland`);
@@ -412,10 +458,10 @@ async function updateMarketInsights({
       renderListings(
         [],
         'Keine passenden Beispielangebote gefunden. Bitte passen Sie Ihr Budget oder die PLZ an.',
-        { maxPropertyPrice, availableAssets: sanitizedAssets },
+        { maxPropertyPrice, maxTotalCost: totalCostCap, availableAssets: sanitizedAssets },
       );
     } else {
-      renderListings(listings, '', { maxPropertyPrice, availableAssets: sanitizedAssets });
+      renderListings(listings, '', { maxPropertyPrice, maxTotalCost: totalCostCap, availableAssets: sanitizedAssets });
     }
   } catch (error) {
     console.error(error);
@@ -423,6 +469,7 @@ async function updateMarketInsights({
     setAveragePriceDisplay('–');
     renderListings([], 'Marktdaten konnten nicht geladen werden.', {
       maxPropertyPrice,
+      maxTotalCost: totalCostCap,
       availableAssets: sanitizedAssets,
     });
   }
@@ -462,9 +509,12 @@ function handleMortgageSubmit(event) {
     alert(error.message);
     return;
   }
-  const { possibleLoan, totalAffordable, maxPropertyPrice } = affordableValues;
+  const { possibleLoan, totalAffordable, maxPropertyPrice, maxTotalCost } = affordableValues;
 
-  totalCostOutput.textContent = currencyFormatter.format(maxPropertyPrice);
+  const basePriceText = currencyFormatter.format(maxPropertyPrice);
+  const totalCostText = currencyFormatter.format(maxTotalCost);
+
+  totalCostOutput.textContent = `${basePriceText} (≈ ${totalCostText} inkl. Nebenkosten)`;
   loanAmountOutput.textContent = currencyFormatter.format(possibleLoan);
   calculatedRateOutput.textContent = currencyFormatter.format(totalAffordable);
 
@@ -473,6 +523,7 @@ function handleMortgageSubmit(event) {
     assets,
     postalCode,
     maxPropertyPrice,
+    maxTotalCost,
     interestRatePercent: interestPercent,
     repaymentRatePercent: repaymentPercent,
     interestRate,
@@ -487,13 +538,12 @@ function handleMortgageSubmit(event) {
   affordabilityMessage.textContent =
     `Mit einer monatlichen Rate von ${currencyFormatter.format(budget)} und einem Vermögen von ${currencyFormatter.format(
       assets,
-    )} bei ${interestPercentText}% Zins und ${repaymentPercentText}% Tilgung eine Immobilie im Wert von bis zu ${currencyFormatter.format(
-      maxPropertyPrice,
-    )} (zzgl. Nebenkosten) finanzieren.`;
+    )} bei ${interestPercentText}% Zins und ${repaymentPercentText}% Tilgung eine Immobilie im Wert von bis zu ${basePriceText} (ca. ${totalCostText} inkl. Nebenkosten) finanzieren.`;
 
   updateMarketInsights({
     postalCode,
     maxPropertyPrice,
+    maxTotalCost,
     rates: { interestRate, repaymentRate },
     availableAssets: assets,
     fromStorage: false,
@@ -506,6 +556,7 @@ function initMarketInsightsFromStorage() {
   if (!marketInsightsCard) return;
   const postalCode = typeof savedUserData.postalCode === 'string' ? savedUserData.postalCode : '';
   const maxPrice = typeof savedUserData.maxPropertyPrice === 'number' ? savedUserData.maxPropertyPrice : null;
+  const maxTotalCost = typeof savedUserData.maxTotalCost === 'number' ? savedUserData.maxTotalCost : null;
   const storedInterestRate =
     typeof savedUserData.interestRate === 'number'
       ? savedUserData.interestRate
@@ -526,6 +577,7 @@ function initMarketInsightsFromStorage() {
     updateMarketInsights({
       postalCode,
       maxPropertyPrice: maxPrice,
+      maxTotalCost,
       rates: { interestRate: storedInterestRate, repaymentRate: storedRepaymentRate },
       availableAssets: storedAssets,
       fromStorage: true,
