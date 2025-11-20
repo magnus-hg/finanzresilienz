@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Optional
-import pandas as pd
 
 
 @dataclass
@@ -86,7 +85,7 @@ def rent_for_year(params: RentParams, year_index: int) -> tuple[float, float, fl
 
 
 
-def simulate(params: SimulationParams) -> pd.DataFrame:
+def simulate(params: SimulationParams) -> list[dict]:
     pp = params.property_params
     lp = params.loan_params
     rp = params.rent_params
@@ -192,27 +191,31 @@ def simulate(params: SimulationParams) -> pd.DataFrame:
         value_start = value_end
         rest = new_rest
 
-    df = pd.DataFrame({
-        "year": years,
-        "property_value_start": prop_value_start,
-        "property_value_end": prop_value_end,
-        "equity_start": equity_start,
-        "equity_end": equity_end,
-        "loan_rest_start": loan_rest_start,
-        "loan_rest_end": loan_rest_end,
-        "annuity_annual": annuity_annual,
-        "interest_paid": interest_paid,
-        "principal_paid": principal_paid,
-        "net_cold_rent_month": net_cold_month_list,
-        "warm_rent_month": warm_month_list,
-        "warm_rent_year": warm_year_list,
-        "mgmt_costs_annual": mgmt_costs_annual_list,
-        "depreciation_annual": depreciation_annual,
-        "depreciation_cum": depreciation_cum,
-        "taxable_income": taxable_income,
-        "taxes": taxes,
-        "cashflow_operating": cf_operating,
-        "cashflow_after_tax": cf_after_tax,
-    })
+    records = []
+    for idx in range(len(years)):
+        records.append(
+            {
+                "year": years[idx],
+                "property_value_start": prop_value_start[idx],
+                "property_value_end": prop_value_end[idx],
+                "equity_start": equity_start[idx],
+                "equity_end": equity_end[idx],
+                "loan_rest_start": loan_rest_start[idx],
+                "loan_rest_end": loan_rest_end[idx],
+                "annuity_annual": annuity_annual[idx],
+                "interest_paid": interest_paid[idx],
+                "principal_paid": principal_paid[idx],
+                "net_cold_rent_month": net_cold_month_list[idx],
+                "warm_rent_month": warm_month_list[idx],
+                "warm_rent_year": warm_year_list[idx],
+                "mgmt_costs_annual": mgmt_costs_annual_list[idx],
+                "depreciation_annual": depreciation_annual[idx],
+                "depreciation_cum": depreciation_cum[idx],
+                "taxable_income": taxable_income[idx],
+                "taxes": taxes[idx],
+                "cashflow_operating": cf_operating[idx],
+                "cashflow_after_tax": cf_after_tax[idx],
+            }
+        )
 
-    return df
+    return records
