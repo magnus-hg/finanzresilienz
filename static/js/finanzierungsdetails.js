@@ -274,6 +274,7 @@ function buildChartData(schedule, options = {}) {
       borderColor: 'rgba(59, 130, 246, 1)',
       backgroundColor: 'rgba(59, 130, 246, 0.1)',
       tension: 0.2,
+      stack: 'balances',
       yAxisID: 'y',
     },
   ];
@@ -287,6 +288,7 @@ function buildChartData(schedule, options = {}) {
       borderColor: 'rgba(234, 179, 8, 1)',
       borderDash: [6, 6],
       tension: 0.1,
+      stack: 'rent',
       yAxisID: 'y',
     });
   }
