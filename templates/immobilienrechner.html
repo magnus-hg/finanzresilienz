@@ -33,59 +33,89 @@
 
       <section class="card">
         <form id="mortgage-form" novalidate>
-          <div class="field">
-            <label for="mortgage-budget">Verfügbare monatliche Rate (EUR)</label>
-            <input
-              type="number"
-              id="mortgage-budget"
-              name="mortgage-budget"
-              min="0"
-              step="50"
-              required
-            />
-          </div>
-          <div class="field">
-            <label for="assets">Vermögen (EUR)</label>
-            <input type="number" id="assets" name="assets" min="0" step="1000" required />
-          </div>
-          <div class="field">
-            <label for="interest-rate">Zins p.a. (%)</label>
-            <input
-              type="number"
-              id="interest-rate"
-              name="interest-rate"
-              min="0"
-              step="0.1"
-              value="4"
-              required
-            />
-            <p class="muted">Beispiel: 1 entspricht 1&nbsp;% p.a.</p>
-          </div>
-          <div class="field">
-            <label for="repayment-rate">Tilgung p.a. (%)</label>
-            <input
-              type="number"
-              id="repayment-rate"
-              name="repayment-rate"
-              min="0.1"
-              step="0.1"
-              value="1"
-              required
-            />
-            <p class="muted">Tilgung sollte &gt; 0 sein, z. B. 1 für 1&nbsp;% p.a.</p>
-          </div>
-          <div class="field">
-            <label for="postal-code">Postleitzahl (PLZ)</label>
-            <input
-              type="text"
-              id="postal-code"
-              name="postal-code"
-              pattern="\d{5}"
-              inputmode="numeric"
-              placeholder="z. B. 79100"
-              required
-            />
-            <p class="muted">Wir nutzen die PLZ, um Durchschnittspreise in Ihrer Region zu berechnen.</p>
+          <div class="form-grid">
+            <div class="input-column">
+              <p class="column-title">Pflichtangaben</p>
+              <div class="field">
+                <label for="mortgage-budget">Verfügbare monatliche Rate (EUR)</label>
+                <input
+                  type="number"
+                  id="mortgage-budget"
+                  name="mortgage-budget"
+                  min="0"
+                  step="50"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="assets">Vermögen (EUR)</label>
+                <input
+                  type="number"
+                  id="assets"
+                  name="assets"
+                  min="0"
+                  step="1000"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="postal-code">Postleitzahl (PLZ)</label>
+                <input
+                  type="text"
+                  id="postal-code"
+                  name="postal-code"
+                  pattern="\d{5}"
+                  inputmode="numeric"
+                  placeholder="z. B. 79100"
+                  required
+                />
+                <p class="muted">
+                  Wir nutzen die PLZ, um Durchschnittspreise in Ihrer Region zu berechnen.
+                </p>
+              </div>
+            </div>
+            <div class="input-column subtle">
+              <p class="column-title">Standardannahmen</p>
+              <div class="field">
+                <label for="interest-rate">Zins p.a. (%)</label>
+                <input
+                  type="number"
+                  id="interest-rate"
+                  name="interest-rate"
+                  min="0"
+                  step="0.1"
+                  value="4"
+                  required
+                />
+                <p class="muted">Beispiel: 1 entspricht 1&nbsp;% p.a.</p>
+              </div>
+              <div class="field">
+                <label for="repayment-rate">Tilgung p.a. (%)</label>
+                <input
+                  type="number"
+                  id="repayment-rate"
+                  name="repayment-rate"
+                  min="0.1"
+                  step="0.1"
+                  value="1"
+                  required
+                />
+                <p class="muted">Tilgung sollte &gt; 0 sein, z. B. 1 für 1&nbsp;% p.a.</p>
+              </div>
+              <div class="field">
+                <label for="additional-costs">Nebenkosten (%)</label>
+                <input
+                  type="number"
+                  id="additional-costs"
+                  name="additional-costs"
+                  min="0"
+                  step="0.1"
+                  value="10.5"
+                  required
+                />
+                <p class="muted">Grunderwerbsteuer, Notar &amp; Makler als Aufschlag auf den Kaufpreis.</p>
+              </div>
+            </div>
           </div>
           <button type="submit" class="primary">Bezahlbaren Preis berechnen</button>
         </form>

@@ -17,6 +17,8 @@ const detailPrice = document.getElementById('detail-price');
 const detailAssets = document.getElementById('detail-assets');
 const detailLoan = document.getElementById('detail-loan');
 const detailRate = document.getElementById('detail-rate');
+const detailRent = document.getElementById('detail-rent');
+const detailRentMeta = document.getElementById('detail-rent-meta');
 const badgeLoan = document.getElementById('badge-loan');
 const badgeDuration = document.getElementById('badge-duration');
 const chartCanvas = document.getElementById('financing-chart');
@@ -93,6 +95,8 @@ function renderFinancingMessage(property) {
   const totalPrice = deriveTotalPrice(property);
   const canBuyDirectly = Number.isFinite(totalPrice) && totalPrice <= property.available_assets;
   const needsMortgage = property.mortgage_loan_amount > 0;
+  const rentMonth = Number(property.estimated_rent_month);
+  const monthlyRate = Number(property.mortgage_monthly_rate);
 
   financingStatus.classList.remove('result-positive', 'result-negative');
   financingStatus.classList.add(canBuyDirectly ? 'result-positive' : 'result-negative');
@@ -101,8 +105,14 @@ function renderFinancingMessage(property) {
     financingMessage.textContent =
       'Sie können dieses Objekt vollständig mit Ihrem Eigenkapital erwerben – keine Finanzierung notwendig.';
   } else if (needsMortgage) {
+    const coverageText =
+      Number.isFinite(rentMonth) && Number.isFinite(monthlyRate) && monthlyRate > 0
+        ? `Die geschätzten Mieteinnahmen von ${currencyFormatter.format(Math.round(rentMonth))} decken etwa ${Math.round(
+            (rentMonth / monthlyRate) * 100,
+          )}% der Rate.`
+        : 'Wir kalkulieren die Rate mit Ihren Standardannahmen zu Zins und Tilgung.';
     financingMessage.textContent =
-      'Für dieses Objekt ist eine Finanzierung erforderlich. Die unten stehende Tilgungsplanung zeigt den Verlauf.';
+      `Für dieses Objekt ist eine Finanzierung erforderlich. ${coverageText} Die unten stehende Tilgungsplanung zeigt den Verlauf.`;
   } else {
     financingMessage.textContent = 'Bitte prüfen Sie Ihre Eingaben oder berechnen Sie das Angebot erneut.';
   }
@@ -128,6 +138,22 @@ function renderStats(property) {
   detailAssets.textContent = currencyFormatter.format(property.available_assets || 0);
   detailLoan.textContent = currencyFormatter.format(property.mortgage_loan_amount || 0);
   detailRate.textContent = currencyFormatter.format(property.mortgage_monthly_rate || 0);
+
+  if (detailRent) {
+    const estimatedRent = Number(property.estimated_rent_month);
+    detailRent.textContent = Number.isFinite(estimatedRent)
+      ? `${currencyFormatter.format(Math.round(estimatedRent))} / Monat`
+      : '–';
+  }
+  if (detailRentMeta) {
+    if (Number.isFinite(property.estimated_rent_per_sqm) && property.estimated_rent_per_sqm > 0) {
+      detailRentMeta.textContent = `≈ ${currencyFormatter.format(property.estimated_rent_per_sqm)} pro m² • Größe: ${numberFormatter.format(
+        property.living_space_sqm || 0,
+      )} m²`;
+    } else {
+      detailRentMeta.textContent = 'Keine Mietschätzung verfügbar.';
+    }
+  }
 }
 
 function renderSummary(property) {
@@ -139,41 +165,58 @@ function renderSummary(property) {
   summary.textContent = `${address} • ${rooms} • ${size}`;
 }
 
-function buildChartData(schedule) {
+function buildChartData(schedule, annualRent = 0) {
+  const datasets = [
+    {
+      type: 'bar',
+      label: 'Zinsanteil',
+      data: schedule.map((item) => Math.round(item.interestPaid)),
+      backgroundColor: 'rgba(234, 88, 12, 0.6)',
+      stack: 'payments',
+    },
+    {
+      type: 'bar',
+      label: 'Tilgung',
+      data: schedule.map((item) => Math.round(item.principalPaid)),
+      backgroundColor: 'rgba(16, 185, 129, 0.7)',
+      stack: 'payments',
+    },
+    {
+      type: 'line',
+      label: 'Restschuld',
+      data: schedule.map((item) => Math.round(item.remainingPrincipal)),
+      borderColor: 'rgba(59, 130, 246, 1)',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      tension: 0.2,
+      yAxisID: 'y',
+    },
+  ];
+
+  if (Number.isFinite(annualRent) && annualRent > 0) {
+    datasets.push({
+      type: 'line',
+      label: 'Mieteinnahmen p.a.',
+      data: schedule.map(() => Math.round(annualRent)),
+      borderColor: 'rgba(234, 179, 8, 1)',
+      borderDash: [6, 6],
+      tension: 0.1,
+      yAxisID: 'y',
+    });
+  }
+
   return {
     labels: schedule.map((item) => `Jahr ${item.year}`),
-    datasets: [
-      {
-        type: 'bar',
-        label: 'Zinsanteil',
-        data: schedule.map((item) => Math.round(item.interestPaid)),
-        backgroundColor: 'rgba(234, 88, 12, 0.6)',
-        stack: 'payments',
-      },
-      {
-        type: 'bar',
-        label: 'Tilgung',
-        data: schedule.map((item) => Math.round(item.principalPaid)),
-        backgroundColor: 'rgba(16, 185, 129, 0.7)',
-        stack: 'payments',
-      },
-      {
-        type: 'line',
-        label: 'Restschuld',
-        data: schedule.map((item) => Math.round(item.remainingPrincipal)),
-        borderColor: 'rgba(59, 130, 246, 1)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0.2,
-        yAxisID: 'y',
-      },
-    ],
+    datasets,
   };
 }
 
-function renderChart(schedule) {
+function renderChart(schedule, property) {
   if (!chartCanvas || schedule.length === 0) return;
 
-  const chartData = buildChartData(schedule);
+  const annualRent = property && Number.isFinite(property.estimated_rent_month)
+    ? property.estimated_rent_month * 12
+    : 0;
+  const chartData = buildChartData(schedule, annualRent);
   const ctx = chartCanvas.getContext('2d');
   if (!ctx) return;
 
@@ -225,7 +268,7 @@ function initFinancingDetails() {
     property.mortgage_tilgung_rate,
   );
   renderBadges(property, schedule);
-  renderChart(schedule);
+  renderChart(schedule, property);
 }
 
 initFinancingDetails();
