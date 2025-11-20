@@ -22,6 +22,7 @@ const detailRentMeta = document.getElementById('detail-rent-meta');
 const badgeLoan = document.getElementById('badge-loan');
 const badgeDuration = document.getElementById('badge-duration');
 const chartCanvas = document.getElementById('financing-chart');
+const RENT_GROWTH_RATE = 0.02;
 
 function deriveTotalPrice(property) {
   const totalPrice = Number(property.total_price_eur);
@@ -91,12 +92,17 @@ function calculateSchedule(principal, interestRate, tilgungRate, maxYears = 100)
   return schedule;
 }
 
+function isRentalScenario(property) {
+  return property.property_usage === 'rental';
+}
+
 function renderFinancingMessage(property) {
   const totalPrice = deriveTotalPrice(property);
   const canBuyDirectly = Number.isFinite(totalPrice) && totalPrice <= property.available_assets;
   const needsMortgage = property.mortgage_loan_amount > 0;
   const rentMonth = Number(property.estimated_rent_month);
   const monthlyRate = Number(property.mortgage_monthly_rate);
+  const rentalScenario = isRentalScenario(property);
 
   financingStatus.classList.remove('result-positive', 'result-negative');
   financingStatus.classList.add(canBuyDirectly ? 'result-positive' : 'result-negative');
@@ -106,13 +112,13 @@ function renderFinancingMessage(property) {
       'Sie können dieses Objekt vollständig mit Ihrem Eigenkapital erwerben – keine Finanzierung notwendig.';
   } else if (needsMortgage) {
     const coverageText =
-      Number.isFinite(rentMonth) && Number.isFinite(monthlyRate) && monthlyRate > 0
+      rentalScenario && Number.isFinite(rentMonth) && Number.isFinite(monthlyRate) && monthlyRate > 0
         ? `Die geschätzten Mieteinnahmen von ${currencyFormatter.format(Math.round(rentMonth))} decken etwa ${Math.round(
             (rentMonth / monthlyRate) * 100,
           )}% der Rate.`
         : 'Wir kalkulieren die Rate mit Ihren Standardannahmen zu Zins und Tilgung.';
-    financingMessage.textContent =
-      `Für dieses Objekt ist eine Finanzierung erforderlich. ${coverageText} Die unten stehende Tilgungsplanung zeigt den Verlauf.`;
+    const rentalNote = rentalScenario ? ' Wir berücksichtigen die Mieteinnahmen im Verlauf.' : '';
+    financingMessage.textContent = `Für dieses Objekt ist eine Finanzierung erforderlich.${rentalNote} ${coverageText} Die unten stehende Tilgungsplanung zeigt den Verlauf.`;
   } else {
     financingMessage.textContent = 'Bitte prüfen Sie Ihre Eingaben oder berechnen Sie das Angebot erneut.';
   }
@@ -139,14 +145,21 @@ function renderStats(property) {
   detailLoan.textContent = currencyFormatter.format(property.mortgage_loan_amount || 0);
   detailRate.textContent = currencyFormatter.format(property.mortgage_monthly_rate || 0);
 
+  const rentalScenario = isRentalScenario(property);
   if (detailRent) {
-    const estimatedRent = Number(property.estimated_rent_month);
-    detailRent.textContent = Number.isFinite(estimatedRent)
-      ? `${currencyFormatter.format(Math.round(estimatedRent))} / Monat`
-      : '–';
+    if (rentalScenario) {
+      const estimatedRent = Number(property.estimated_rent_month);
+      detailRent.textContent = Number.isFinite(estimatedRent)
+        ? `${currencyFormatter.format(Math.round(estimatedRent))} / Monat`
+        : '–';
+    } else {
+      detailRent.textContent = 'Nicht relevant (Eigennutzung)';
+    }
   }
   if (detailRentMeta) {
-    if (Number.isFinite(property.estimated_rent_per_sqm) && property.estimated_rent_per_sqm > 0) {
+    if (!rentalScenario) {
+      detailRentMeta.textContent = 'Bei Eigennutzung fallen keine Mieteinnahmen an.';
+    } else if (Number.isFinite(property.estimated_rent_per_sqm) && property.estimated_rent_per_sqm > 0) {
       detailRentMeta.textContent = `≈ ${currencyFormatter.format(property.estimated_rent_per_sqm)} pro m² • Größe: ${numberFormatter.format(
         property.living_space_sqm || 0,
       )} m²`;
@@ -162,10 +175,12 @@ function renderSummary(property) {
   const size = property.living_space_sqm
     ? `${numberFormatter.format(property.living_space_sqm)} m²`
     : 'Fläche n. v.';
-  summary.textContent = `${address} • ${rooms} • ${size}`;
+  const usage = isRentalScenario(property) ? 'Vermietungsszenario' : 'Eigennutzung';
+  summary.textContent = `${address} • ${rooms} • ${size} • ${usage}`;
 }
 
-function buildChartData(schedule, annualRent = 0) {
+function buildChartData(schedule, options = {}) {
+  const { annualRent = 0, showRentLine = false, rentGrowthRate = RENT_GROWTH_RATE } = options;
   const datasets = [
     {
       type: 'bar',
@@ -192,11 +207,12 @@ function buildChartData(schedule, annualRent = 0) {
     },
   ];
 
-  if (Number.isFinite(annualRent) && annualRent > 0) {
+  if (showRentLine && Number.isFinite(annualRent) && annualRent > 0) {
+    const rentSeries = schedule.map((item, index) => Math.round(annualRent * (1 + rentGrowthRate) ** index));
     datasets.push({
       type: 'line',
       label: 'Mieteinnahmen p.a.',
-      data: schedule.map(() => Math.round(annualRent)),
+      data: rentSeries,
       borderColor: 'rgba(234, 179, 8, 1)',
       borderDash: [6, 6],
       tension: 0.1,
@@ -213,10 +229,16 @@ function buildChartData(schedule, annualRent = 0) {
 function renderChart(schedule, property) {
   if (!chartCanvas || schedule.length === 0) return;
 
-  const annualRent = property && Number.isFinite(property.estimated_rent_month)
-    ? property.estimated_rent_month * 12
-    : 0;
-  const chartData = buildChartData(schedule, annualRent);
+  const rentalScenario = isRentalScenario(property);
+  const annualRent =
+    rentalScenario && property && Number.isFinite(property.estimated_rent_month)
+      ? property.estimated_rent_month * 12
+      : 0;
+  const chartData = buildChartData(schedule, {
+    annualRent,
+    showRentLine: rentalScenario,
+    rentGrowthRate: RENT_GROWTH_RATE,
+  });
   const ctx = chartCanvas.getContext('2d');
   if (!ctx) return;
 

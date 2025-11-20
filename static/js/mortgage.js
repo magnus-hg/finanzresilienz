@@ -259,6 +259,7 @@ function renderListings(listings, fallbackMessage, options = {}) {
       const payload = {
         ...property,
         available_assets: availableAssets,
+        property_usage: 'owner-occupied',
       };
       sessionStorage.setItem('selectedPropertyDetails', JSON.stringify(payload));
       window.location.href = '/finanzierungsdetails';
