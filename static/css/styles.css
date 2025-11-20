@@ -550,6 +550,51 @@ canvas {
   transform: translateY(-1px);
 }
 
+.view-toggle-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.view-toggle {
+  display: inline-flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+
+.toggle-button {
+  background: transparent;
+  color: var(--text);
+  border: none;
+  padding: 0.7rem 1.3rem;
+  border-radius: 999px;
+  box-shadow: none;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+
+.toggle-button.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 10px 25px rgba(47, 129, 247, 0.35);
+}
+
+.view-hint {
+  text-align: center;
+  margin: 0;
+}
+
+.view-section.is-hidden {
+  display: none;
+}
+
+.subtle-card {
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .secondary {
   background: transparent;
   border: 1px solid var(--accent);

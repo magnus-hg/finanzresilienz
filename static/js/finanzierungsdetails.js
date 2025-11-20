@@ -22,6 +22,13 @@ const detailRentMeta = document.getElementById('detail-rent-meta');
 const badgeLoan = document.getElementById('badge-loan');
 const badgeDuration = document.getElementById('badge-duration');
 const chartCanvas = document.getElementById('financing-chart');
+const viewDescription = document.getElementById('view-description');
+const viewButtons = document.querySelectorAll('[data-view-button]');
+const viewSections = document.querySelectorAll('.view-section');
+const rentalCoverage = document.getElementById('rental-coverage');
+const rentalCoverageMeta = document.getElementById('rental-coverage-meta');
+const rentalGrossYield = document.getElementById('rental-gross-yield');
+const rentalOutlook = document.getElementById('rental-outlook');
 const RENT_GROWTH_RATE = 0.02;
 
 function deriveTotalPrice(property) {
@@ -124,6 +131,45 @@ function renderFinancingMessage(property) {
   }
 }
 
+function renderRentalKPIs(property) {
+  if (!rentalCoverage || !rentalGrossYield) return;
+
+  const rentMonth = Number(property.estimated_rent_month);
+  const monthlyRate = Number(property.mortgage_monthly_rate);
+  const totalPrice = deriveTotalPrice(property);
+
+  if (Number.isFinite(rentMonth) && Number.isFinite(monthlyRate) && monthlyRate > 0) {
+    const coverage = Math.min((rentMonth / monthlyRate) * 100, 9999);
+    rentalCoverage.textContent = `${numberFormatter.format(coverage)} %`;
+    rentalCoverageMeta.textContent = `Mieteinnahmen von ${currencyFormatter.format(
+      Math.round(rentMonth),
+    )} decken ${numberFormatter.format(coverage)} % der Rate von ${currencyFormatter.format(
+      Math.round(monthlyRate),
+    )}.`;
+  } else if (!Number.isFinite(rentMonth)) {
+    rentalCoverage.textContent = '–';
+    rentalCoverageMeta.textContent = 'Keine Mietschätzung verfügbar.';
+  } else {
+    rentalCoverage.textContent = '–';
+    rentalCoverageMeta.textContent = 'Keine Rate berechnet.';
+  }
+
+  const annualRent = Number.isFinite(rentMonth) ? rentMonth * 12 : NaN;
+  if (Number.isFinite(annualRent) && Number.isFinite(totalPrice) && totalPrice > 0) {
+    const grossYield = Math.min((annualRent / totalPrice) * 100, 9999);
+    rentalGrossYield.textContent = `${numberFormatter.format(grossYield)} %`;
+  } else {
+    rentalGrossYield.textContent = '–';
+  }
+
+  if (rentalOutlook) {
+    const rentalScenario = isRentalScenario(property);
+    rentalOutlook.textContent = rentalScenario
+      ? 'Vermietungssicht: Wir zeigen, wie Mieteinnahmen Rate und Rendite beeinflussen.'
+      : 'Eigennutzung vorausgewählt – Vermietungssicht blendet hypothetische Mieteinnahmen ein.';
+  }
+}
+
 function renderBadges(property, schedule) {
   const loanText = Number.isFinite(property.mortgage_loan_amount)
     ? `Darlehen: ${currencyFormatter.format(property.mortgage_loan_amount)}`
@@ -177,6 +223,31 @@ function renderSummary(property) {
     : 'Fläche n. v.';
   const usage = isRentalScenario(property) ? 'Vermietungsszenario' : 'Eigennutzung';
   summary.textContent = `${address} • ${rooms} • ${size} • ${usage}`;
+}
+
+function updateViewDescription(view, property) {
+  if (!viewDescription) return;
+  const scenarioText = view === 'rental'
+    ? 'Sie betrachten das Objekt als Kapitalanlage.'
+    : 'Sie betrachten das Objekt für die Eigennutzung.';
+  const dataOrigin = isRentalScenario(property)
+    ? 'Das Objekt wurde mit Vermietungsparametern berechnet.'
+    : 'Das Objekt wurde mit Parametern zur Eigennutzung berechnet.';
+  viewDescription.textContent = `${scenarioText} ${dataOrigin}`;
+}
+
+function setView(view, property) {
+  viewButtons.forEach((button) => {
+    button.classList.toggle('active', button.dataset.viewButton === view);
+  });
+
+  viewSections.forEach((section) => {
+    const target = section.dataset.view;
+    const shouldHide = target && target !== view;
+    section.classList.toggle('is-hidden', shouldHide);
+  });
+
+  updateViewDescription(view, property);
 }
 
 function buildChartData(schedule, options = {}) {
@@ -283,6 +354,7 @@ function initFinancingDetails() {
   renderSummary(property);
   renderFinancingMessage(property);
   renderStats(property);
+  renderRentalKPIs(property);
 
   const schedule = calculateSchedule(
     property.mortgage_loan_amount,
@@ -291,6 +363,12 @@ function initFinancingDetails() {
   );
   renderBadges(property, schedule);
   renderChart(schedule, property);
+
+  const defaultView = isRentalScenario(property) ? 'rental' : 'owner';
+  setView(defaultView, property);
+  viewButtons.forEach((button) => {
+    button.addEventListener('click', () => setView(button.dataset.viewButton, property));
+  });
 }
 
 initFinancingDetails();

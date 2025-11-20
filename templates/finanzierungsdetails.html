@@ -30,6 +30,42 @@
         </p>
       </header>
 
+      <section class="card view-toggle-card">
+        <div class="view-toggle" role="group" aria-label="Szenario wählen">
+          <button type="button" class="toggle-button" data-view-button="owner">Eigenheim</button>
+          <button type="button" class="toggle-button" data-view-button="rental">Vermietung</button>
+        </div>
+        <p id="view-description" class="muted view-hint">
+          Wählen Sie aus, ob Sie die Finanzierung für Eigennutzung oder Vermietung betrachten möchten.
+        </p>
+      </section>
+
+      <section class="card view-section" data-view="owner">
+        <h2>Eigennutzung im Fokus</h2>
+        <p class="muted">
+          Wir prüfen, ob Ihr Eigenkapital und Ihre Standardparameter für Zins und Tilgung ausreichen, um das Zuhause zu finanzieren.
+        </p>
+      </section>
+
+      <section class="card view-section" data-view="rental">
+        <h2>Vermietung im Fokus</h2>
+        <p class="muted" id="rental-outlook">
+          Wir stellen Mieteinnahmen und Finanzierungsrate gegenüber und schätzen die Mietrendite.
+        </p>
+        <div class="results-grid">
+          <article class="card subtle-card">
+            <h3>Miete deckt Rate</h3>
+            <p id="rental-coverage" class="value">–</p>
+            <p class="muted" id="rental-coverage-meta">Noch keine Mieteinnahmen berechnet.</p>
+          </article>
+          <article class="card subtle-card">
+            <h3>Brutto-Mietrendite</h3>
+            <p id="rental-gross-yield" class="value">–</p>
+            <p class="muted">Jahresmiete im Verhältnis zum Kaufpreis inkl. Nebenkosten.</p>
+          </article>
+        </div>
+      </section>
+
       <section id="financing-status" class="card result-card">
         <h2>Finanzierungsfähigkeit</h2>
         <p id="financing-message" class="muted">
