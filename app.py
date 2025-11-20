@@ -27,6 +27,10 @@ def est_2025(zve: float) -> float:
 
     y = (zve - 11_604) / 10_000
     z = (zve - 17_005) / 10_000
+    progressive_zone_2_cap = 66_760
+    zone_2_z_at_cap = (progressive_zone_2_cap - 17_005) / 10_000
+    progressive_zone_2_end = (181.19 * zone_2_z_at_cap + 2_397) * zone_2_z_at_cap + 1_028
+    zone_3_offset = 0.42 * progressive_zone_2_cap - progressive_zone_2_end
 
     if zve <= 11_604:
         tax = 0
@@ -34,11 +38,11 @@ def est_2025(zve: float) -> float:
     elif zve <= 17_005:  # Progression Zone 1
         tax = (922.98 * y + 1_400) * y
 
-    elif zve <= 66_760:  # Progression Zone 2
+    elif zve <= progressive_zone_2_cap:  # Progression Zone 2
         tax = (181.19 * z + 2_397) * z + 1_028
 
     elif zve <= 277_825:  # 42% zone
-        tax = 0.42 * zve - 10_887.29
+        tax = 0.42 * zve - zone_3_offset
 
     else:  # 45% zone
         tax = 0.45 * zve - 19_322.04
