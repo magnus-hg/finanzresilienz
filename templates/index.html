@@ -91,6 +91,16 @@
           <button class="secondary">Jetzt berechnen</button>
         </div>
         <div class="next-step-column">
+          <p class="column-title">Aktuellen Steuersatz ermitteln</p>
+          <button
+            class="secondary"
+            type="button"
+            onclick="window.location.href='{{ url_for('tax_page') }}'"
+          >
+            Steuerrechner öffnen
+          </button>
+        </div>
+        <div class="next-step-column">
           <p class="column-title">Kann ich mir eine Immobilie leisten</p>
           <button
             class="secondary"

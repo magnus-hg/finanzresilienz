@@ -18,6 +18,62 @@ DEFAULT_TILGUNG_RATE = 0.04
 ADDITIONAL_COST_RATE = 0.105
 
 
+def est_2025(zve: float) -> float:
+    """
+    Einkommensteuer 2025 nach §32a EStG
+    zvE = zu versteuerndes Einkommen
+    Returns: tax amount (ESt)
+    """
+
+    y = (zve - 11_604) / 10_000
+    z = (zve - 17_005) / 10_000
+
+    if zve <= 11_604:
+        tax = 0
+
+    elif zve <= 17_005:  # Progression Zone 1
+        tax = (922.98 * y + 1_400) * y
+
+    elif zve <= 66_760:  # Progression Zone 2
+        tax = (181.19 * z + 2_397) * z + 1_028
+
+    elif zve <= 277_825:  # 42% zone
+        tax = 0.42 * zve - 10_887.29
+
+    else:  # 45% zone
+        tax = 0.45 * zve - 19_322.04
+
+    return tax
+
+
+def tax_rates(zve: float) -> Tuple[float, float, float]:
+    """
+    Returns:
+      est: Einkommensteuer
+      avg_rate: Durchschnittssteuersatz (in %)
+      marginal_rate: Grenzsteuersatz (in %)
+    """
+
+    est = est_2025(zve)
+
+    avg_rate = est / zve * 100 if zve > 0 else 0
+
+    if zve <= 11_604:
+        marginal = 0
+    elif zve <= 17_005:
+        y = (zve - 11_604) / 10_000
+        marginal = (2 * 922.98 * y + 1_400) / 10_000 * 100
+    elif zve <= 66_760:
+        z = (zve - 17_005) / 10_000
+        marginal = (2 * 181.19 * z + 2_397) / 10_000 * 100
+    elif zve <= 277_825:
+        marginal = 42
+    else:
+        marginal = 45
+
+    return est, avg_rate, marginal
+
+
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
 
@@ -462,6 +518,23 @@ def average_rent():
     })
 
 
+@app.route("/api/tax", methods=["POST"])
+def calculate_tax():
+    payload = request.get_json(silent=True) or {}
+    zve = max(_json_float(payload, "zve", 0.0), 0.0)
+
+    est, avg_rate, marginal_rate = tax_rates(zve)
+
+    return jsonify(
+        {
+            "zve": zve,
+            "est": round(est, 2),
+            "avg_rate": round(avg_rate, 2),
+            "marginal_rate": round(marginal_rate, 2),
+        }
+    )
+
+
 @app.route("/api/vermietung/simulation", methods=["POST"])
 def buy_to_let_simulation():
     payload = request.get_json(silent=True) or {}
@@ -525,6 +598,11 @@ def financing_details_rental():
 @app.route("/vermietungsrechner")
 def buy_to_let_page():
     return render_template("vermietungsrechner.html")
+
+
+@app.route("/steuerrechner")
+def tax_page():
+    return render_template("steuerrechner.html")
 
 
 if __name__ == "__main__":

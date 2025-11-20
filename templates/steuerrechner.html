@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Steuerrechner – Aktueller Grenz- und Durchschnittssteuersatz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+  <main class="container">
+    <header>
+      <p class="eyebrow">Steuerrechner 2025</p>
+      <h1>Wie hoch ist Ihre Einkommensteuer auf das aktuelle zu versteuernde Einkommen?</h1>
+      <p>
+        Geben Sie Ihr aktuelles zu versteuerndes Einkommen (zvE) ein. Der Rechner nutzt die
+        Tarife von §32a EStG 2025 und liefert Einkommensteuer, Durchschnitts- und Grenzsteuersatz.
+      </p>
+    </header>
+
+    <section class="card">
+      <form id="tax-form" novalidate>
+        <div class="field">
+          <label for="zve">Zu versteuerndes Einkommen (zvE) in EUR</label>
+          <input type="number" id="zve" name="zve" min="0" step="100" required />
+        </div>
+        <button type="submit" class="primary">Steuersatz berechnen</button>
+      </form>
+    </section>
+
+    <section class="results-grid">
+      <article class="card highlight">
+        <h2>Einkommensteuer</h2>
+        <p id="tax-amount" class="value">–</p>
+        <p class="muted">Berechnet nach §32a EStG 2025.</p>
+      </article>
+      <article class="card">
+        <h2>Durchschnittssteuersatz</h2>
+        <p id="avg-rate" class="value">–</p>
+        <p class="muted">ESt im Verhältnis zum zvE.</p>
+      </article>
+      <article class="card">
+        <h2>Grenzsteuersatz</h2>
+        <p id="marginal-rate" class="value">–</p>
+        <p class="muted">Steuersatz auf den nächsten zusätzlich verdienten Euro.</p>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>Wie wird gerechnet?</h2>
+      <p class="muted">
+        Die Berechnung verwendet die offiziellen Tarifformeln 2025. Unterhalb des Grundfreibetrags von
+        11.604&nbsp;€ fällt keine Einkommensteuer an. In den Progressionszonen wird der Steuersatz
+        stufenweise angehoben, bevor er bei 42&nbsp;% (bzw. 45&nbsp;% ab 277.826&nbsp;€) gedeckelt wird.
+      </p>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/storage.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/steuerrechner.js') }}"></script>
+</body>
+</html>
