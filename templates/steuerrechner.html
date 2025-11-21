@@ -34,12 +34,9 @@
           </select>
         </div>
         <div class="field">
-          <label for="zve">Zu versteuerndes Einkommen (zvE) in EUR</label>
+          <label for="zve" id="zve-label">Zu versteuerndes Einkommen (zvE) in EUR</label>
           <input type="number" id="zve" name="zve" min="0" step="100" required />
-        </div>
-        <div class="field" data-partner-field hidden>
-          <label for="partner-zve">zvE Partner:in in EUR</label>
-          <input type="number" id="partner-zve" name="partner-zve" min="0" step="100" />
+          <p class="muted" id="income-hint">Geben Sie Ihr persönliches zvE ein.</p>
         </div>
         <button type="submit" class="primary">Steuersatz berechnen</button>
       </form>
