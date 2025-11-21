@@ -20,32 +20,31 @@ ADDITIONAL_COST_RATE = 0.105
 
 def est_2025(zve: float) -> float:
     """
-    Einkommensteuer 2025 nach §32a EStG
-    zvE = zu versteuerndes Einkommen
-    Returns: tax amount (ESt)
+    Einkommensteuer 2025 (vereinfachte Implementierung) mit
+    stetigen Übergängen an 66.760 € und 277.825 €.
     """
 
     y = (zve - 11_604) / 10_000
     z = (zve - 17_005) / 10_000
-    progressive_zone_2_cap = 66_760
-    zone_2_z_at_cap = (progressive_zone_2_cap - 17_005) / 10_000
-    progressive_zone_2_end = (181.19 * zone_2_z_at_cap + 2_397) * zone_2_z_at_cap + 1_028
-    zone_3_offset = 0.42 * progressive_zone_2_cap - progressive_zone_2_end
 
     if zve <= 11_604:
-        tax = 0
+        tax = 0.0
 
-    elif zve <= 17_005:  # Progression Zone 1
-        tax = (922.98 * y + 1_400) * y
+    elif zve <= 17_005:
+        # Progressionszone 1
+        tax = (922.98 * y + 1_400.0) * y
 
-    elif zve <= progressive_zone_2_cap:  # Progression Zone 2
-        tax = (181.19 * z + 2_397) * z + 1_028
+    elif zve <= 66_760:
+        # Progressionszone 2
+        tax = (181.19 * z + 2_397.0) * z + 1_028.0
 
-    elif zve <= 277_825:  # 42% zone
-        tax = 0.42 * zve - zone_3_offset
+    elif zve <= 277_825:
+        # 42%-Zone, Konstante so kalibriert, dass bei 66.760 € kein Sprung entsteht
+        tax = 0.42 * zve - 10_599.4592907025
 
-    else:  # 45% zone
-        tax = 0.45 * zve - 19_322.04
+    else:
+        # 45%-Zone, Konstante so kalibriert, dass bei 277.825 € kein Sprung entsteht
+        tax = 0.45 * zve - 18_934.209290702507
 
     return tax
 
