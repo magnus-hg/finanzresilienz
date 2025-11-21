@@ -2,8 +2,8 @@
   const form = document.getElementById('tax-form');
   const filingStatusInput = document.getElementById('filing-status');
   const zveInput = document.getElementById('zve');
-  const partnerZveInput = document.getElementById('partner-zve');
-  const partnerField = document.querySelector('[data-partner-field]');
+  const zveLabel = document.getElementById('zve-label');
+  const incomeHint = document.getElementById('income-hint');
   const taxAmountEl = document.getElementById('tax-amount');
   const avgRateEl = document.getElementById('avg-rate');
   const marginalRateEl = document.getElementById('marginal-rate');
@@ -143,33 +143,25 @@
     if (stored.filing_status) {
       filingStatusInput.value = stored.filing_status;
     }
-    if (stored.partner_zve !== undefined) {
-      partnerZveInput.value = stored.partner_zve;
-    }
-
-    togglePartnerField();
+    updateIncomeCopy();
   }
 
-  function togglePartnerField() {
+  function updateIncomeCopy() {
     const isMarried = filingStatusInput.value === 'married';
-    partnerField.hidden = !isMarried;
-    if (!isMarried) {
-      partnerZveInput.value = '';
-    }
+    zveLabel.textContent = isMarried
+      ? 'Gemeinsames zu versteuerndes Einkommen (zvE) in EUR'
+      : 'Zu versteuerndes Einkommen (zvE) in EUR';
+    incomeHint.textContent = isMarried
+      ? 'Geben Sie Ihr gemeinsames zvE (Summe beider Partner:innen) ein.'
+      : 'Geben Sie Ihr persönliches zvE ein.';
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
     const zve = parseFloat(zveInput.value);
     const filingStatus = filingStatusInput.value || 'single';
-    const partnerZveRaw = partnerZveInput.value;
-    const partnerZve = filingStatus === 'married' ? parseFloat(partnerZveRaw || '0') : 0;
     if (Number.isNaN(zve) || zve < 0) {
       alert('Bitte ein gültiges zu versteuerndes Einkommen eingeben.');
-      return;
-    }
-    if (filingStatus === 'married' && (Number.isNaN(partnerZve) || partnerZve < 0)) {
-      alert('Bitte ein gültiges zvE für den Partner/die Partnerin eingeben.');
       return;
     }
 
@@ -179,7 +171,7 @@
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ zve, filing_status: filingStatus, partner_zve: partnerZve }),
+        body: JSON.stringify({ zve, filing_status: filingStatus, partner_zve: 0 }),
       });
 
       if (!response.ok) {
@@ -195,7 +187,6 @@
       window.userDataStore?.save?.({
         zve,
         filing_status: filingStatus,
-        partner_zve: filingStatus === 'married' ? partnerZve : 0,
       });
     } catch (error) {
       console.error(error);
@@ -204,6 +195,6 @@
   }
 
   populateFromStorage();
-  filingStatusInput.addEventListener('change', togglePartnerField);
+  filingStatusInput.addEventListener('change', updateIncomeCopy);
   form.addEventListener('submit', handleSubmit);
 })();
