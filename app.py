@@ -607,7 +607,22 @@ def calculate_tax():
             "marginal_rate": round(marginal_rate, 2),
             "curve": _tax_curve(max_income=total_zve),
             "filing_status": filing_status,
-            "partner_zve": partner_zve if filing_status == "married" else 0.0,
+        "partner_zve": partner_zve if filing_status == "married" else 0.0,
+        }
+    )
+
+
+@app.route("/api/plz/<plz>/market-data")
+def plz_market_data(plz: str):
+    """Return fixed market data metrics for a given postal code."""
+
+    return jsonify(
+        {
+            "plz": plz,
+            "avg_mietpreis_neuvermietung_per_sqm": 10.0,
+            "avg_kaufpreis_per_sqm": 4_000.0,
+            "avg_hausgeld_per_sqm": 4.0,
+            "umlagefaehiges_hausgeld_per_sqm": 2.75,
         }
     )
 
