@@ -15,19 +15,31 @@
 <body>
   <main class="container">
     <header>
-      <p class="eyebrow">Steuerrechner 2025</p>
+      <p class="eyebrow">Steuerrechner 2026</p>
       <h1>Wie hoch ist Ihre Einkommensteuer auf das aktuelle zu versteuernde Einkommen?</h1>
       <p>
         Geben Sie Ihr aktuelles zu versteuerndes Einkommen (zvE) ein. Der Rechner nutzt die
-        Tarife von §32a EStG 2025 und liefert Einkommensteuer, Durchschnitts- und Grenzsteuersatz.
+        Tarife von §32a EStG 2026 und liefert Einkommensteuer, Durchschnitts- und Grenzsteuersatz
+        für Einzel- und Zusammenveranlagung.
       </p>
     </header>
 
     <section class="card">
       <form id="tax-form" novalidate>
         <div class="field">
+          <label for="filing-status">Veranlagungsart</label>
+          <select id="filing-status" name="filing-status">
+            <option value="single">Einzelveranlagung</option>
+            <option value="married">Zusammenveranlagung (Ehe/Lebenspartner)</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="zve">Zu versteuerndes Einkommen (zvE) in EUR</label>
           <input type="number" id="zve" name="zve" min="0" step="100" required />
+        </div>
+        <div class="field" data-partner-field hidden>
+          <label for="partner-zve">zvE Partner:in in EUR</label>
+          <input type="number" id="partner-zve" name="partner-zve" min="0" step="100" />
         </div>
         <button type="submit" class="primary">Steuersatz berechnen</button>
       </form>
@@ -37,7 +49,7 @@
       <article class="card highlight">
         <h2>Einkommensteuer</h2>
         <p id="tax-amount" class="value">–</p>
-        <p class="muted">Berechnet nach §32a EStG 2025.</p>
+        <p class="muted">Berechnet nach §32a EStG 2026.</p>
       </article>
       <article class="card">
         <h2>Durchschnittssteuersatz</h2>
@@ -68,9 +80,11 @@
     <section class="card">
       <h2>Wie wird gerechnet?</h2>
       <p class="muted">
-        Die Berechnung verwendet die offiziellen Tarifformeln 2025. Unterhalb des Grundfreibetrags von
-        11.604&nbsp;€ fällt keine Einkommensteuer an. In den Progressionszonen wird der Steuersatz
-        stufenweise angehoben, bevor er bei 42&nbsp;% (bzw. 45&nbsp;% ab 277.826&nbsp;€) gedeckelt wird.
+        Die Berechnung verwendet die offiziellen Tarifformeln 2026. Unterhalb des Grundfreibetrags von
+        12.348&nbsp;€ fällt keine Einkommensteuer an. In den Progressionszonen wird der Steuersatz
+        stufenweise angehoben, bevor er bei 42&nbsp;% (bzw. 45&nbsp;% ab 277.826&nbsp;€) gedeckelt wird. Bei
+        Zusammenveranlagung wird das gemeinsame zvE halbiert, nach dem Grundtarif besteuert und das Ergebnis
+        verdoppelt (Ehegattensplitting).
       </p>
     </section>
   </main>
