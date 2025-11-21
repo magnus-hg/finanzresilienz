@@ -1,14 +1,17 @@
 const RETIREMENT_AGE = 67;
-const RETURN_RATE = 0.08;
 
 const form = document.getElementById('projection-form');
 const ageInput = document.getElementById('age');
 const incomeInput = document.getElementById('income');
+const etfSelect = document.getElementById('etf-choice');
 const yearsOutput = document.getElementById('years-to-retirement');
 const annualInvestmentOutput = document.getElementById('annual-investment');
 const finalWealthOutput = document.getElementById('final-wealth');
 const investedWealthOutput = document.getElementById('invested-wealth');
 const chartCanvas = document.getElementById('wealth-chart');
+const chartNote = document.getElementById('chart-note');
+const selectedEtfLabel = document.getElementById('selected-etf');
+const selectedReturnLabel = document.getElementById('selected-return');
 
 const savedUserData = window.userDataStore ? userDataStore.load() : {};
 
@@ -18,6 +21,14 @@ function populateInitialValues() {
   }
   if (typeof savedUserData.monthlyRate === 'number') {
     incomeInput.value = savedUserData.monthlyRate;
+  }
+  if (typeof savedUserData.etfIsin === 'string' && etfSelect) {
+    const matchingOption = Array.from(etfSelect.options).find(
+      (option) => option.value === savedUserData.etfIsin,
+    );
+    if (matchingOption) {
+      etfSelect.value = savedUserData.etfIsin;
+    }
   }
 }
 
@@ -32,6 +43,12 @@ function persistNumberInput(input, key) {
 populateInitialValues();
 persistNumberInput(ageInput, 'age');
 persistNumberInput(incomeInput, 'monthlyRate');
+if (etfSelect) {
+  etfSelect.addEventListener('change', () => {
+    userDataStore.save({ etfIsin: etfSelect.value });
+    triggerProjectionFromInputs();
+  });
+}
 
 const currencyFormatter = new Intl.NumberFormat('de-DE', {
   style: 'currency',
@@ -41,7 +58,24 @@ const currencyFormatter = new Intl.NumberFormat('de-DE', {
 
 let wealthChart;
 
-function calculateProjection(age, monthlyIncome) {
+function formatPercent(value) {
+  return `${(value * 100).toFixed(1).replace('.', ',')} %`;
+}
+
+function getSelectedReturnRate() {
+  if (!etfSelect) return 0.08;
+  const selectedOption = etfSelect.options[etfSelect.selectedIndex];
+  const rate = Number(selectedOption?.dataset.returnRate);
+  return Number.isFinite(rate) ? rate : 0.08;
+}
+
+function getSelectedEtfName() {
+  if (!etfSelect) return 'ETF';
+  const selectedOption = etfSelect.options[etfSelect.selectedIndex];
+  return selectedOption?.dataset.label || selectedOption?.textContent || 'ETF';
+}
+
+function calculateProjection(age, monthlyIncome, returnRate) {
   const yearsToRetirement = Math.max(RETIREMENT_AGE - age, 0);
   const annualContribution = monthlyIncome * 12;
   const dataPoints = [];
@@ -49,7 +83,7 @@ function calculateProjection(age, monthlyIncome) {
 
   let wealth = 0;
   for (let year = 1; year <= yearsToRetirement; year += 1) {
-    wealth = (wealth + annualContribution) * (1 + RETURN_RATE);
+    wealth = (wealth + annualContribution) * (1 + returnRate);
     dataPoints.push({
       label: `Alter ${age + year}`,
       year,
@@ -164,10 +198,30 @@ function runProjection(age, income, { silent = false } = {}) {
     return true;
   }
 
-  const projection = calculateProjection(age, income);
+  const returnRate = getSelectedReturnRate();
+  const etfName = getSelectedEtfName();
+  const projection = calculateProjection(age, income, returnRate);
   updateOutputs(projection);
   updateChart(projection.dataPoints);
+  if (chartNote) {
+    chartNote.textContent =
+      'Die Berechnung nimmt an, dass Ihr verfügbarer Betrag einmal pro Jahr investiert wird und das gesamte Vermögen jedes Jahr um ' +
+      formatPercent(returnRate) +
+      ' wächst.';
+  }
+  if (selectedEtfLabel) {
+    selectedEtfLabel.textContent = etfName;
+  }
+  if (selectedReturnLabel) {
+    selectedReturnLabel.textContent = formatPercent(returnRate);
+  }
   return true;
+}
+
+function triggerProjectionFromInputs() {
+  const age = Number(ageInput.value);
+  const income = Number(incomeInput.value);
+  runProjection(age, income, { silent: true });
 }
 
 function handleFormSubmit(event) {
@@ -184,9 +238,11 @@ function handleFormSubmit(event) {
 
 const hasPrefilledValues = ageInput.value !== '' && incomeInput.value !== '';
 if (hasPrefilledValues) {
-  const initialAge = Number(ageInput.value);
-  const initialIncome = Number(incomeInput.value);
-  runProjection(initialAge, initialIncome, { silent: true });
+  triggerProjectionFromInputs();
+} else if (etfSelect) {
+  // Ensure selected ETF information is reflected even before the first submit
+  selectedEtfLabel.textContent = getSelectedEtfName();
+  selectedReturnLabel.textContent = formatPercent(getSelectedReturnRate());
 }
 
 form.addEventListener('submit', handleFormSubmit);

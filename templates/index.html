@@ -20,9 +20,10 @@
       <p>
         Geben Sie Ihr aktuelles Alter und den monatlich verfügbaren Betrag ein. Wir
         berechnen daraus die Jahre bis zur Rente und simulieren, wie Ihr Vermögen
-        bei 8&nbsp;% jährlicher Rendite wächst. Das Tool basiert auf der Annahme,
-        dass Sie in einen S&amp;P&nbsp;500 ETF investieren, der historisch im
-        Durchschnitt rund 8&nbsp;% pro Jahr erzielt hat.
+        basierend auf Ihrer ETF-Auswahl wächst. Wählen Sie zwischen dem europäischen
+        Amundi Core STOXX Europe&nbsp;600 (6,7&nbsp;% p.a.), dem globalen iShares
+        MSCI World (11,7&nbsp;% p.a.) oder dem US-lastigen iShares S&amp;P&nbsp;500
+        (14,4&nbsp;% p.a.).
       </p>
     </header>
 
@@ -35,6 +36,33 @@
         <div class="field">
           <label for="income">Mögliche Monatliche Sparrate (EUR)</label>
           <input type="number" id="income" name="income" min="0" step="50" required />
+        </div>
+        <div class="field">
+          <label for="etf-choice">ETF auswählen</label>
+          <select id="etf-choice" name="etf-choice">
+            <option
+              value="LU0908500753"
+              data-return-rate="0.067"
+              data-label="Amundi Core STOXX Europe 600 UCITS ETF Acc"
+            >
+              Amundi Core STOXX Europe 600 UCITS ETF Acc – 6,7 % erwartete Rendite
+            </option>
+            <option
+              value="IE00B4L5Y983"
+              data-return-rate="0.117"
+              data-label="iShares Core MSCI World UCITS ETF"
+              selected
+            >
+              iShares Core MSCI World UCITS ETF – 11,7 % erwartete Rendite
+            </option>
+            <option
+              value="IE00B5BMR087"
+              data-return-rate="0.144"
+              data-label="iShares Core S&amp;P 500"
+            >
+              iShares Core S&amp;P 500 – 14,4 % erwartete Rendite
+            </option>
+          </select>
         </div>
         <button type="submit" class="primary">Vermögensentwicklung berechnen</button>
       </form>
@@ -57,7 +85,10 @@
       <div class="chart-header">
         <div>
           <h2>Vermögensentwicklung</h2>
-          <p class="muted">Jährliche Wertentwicklung inkl. 8&nbsp;% Rendite.</p>
+          <p class="muted">
+            Prognose mit <span id="selected-etf">iShares Core MSCI World UCITS ETF</span>
+            und <span id="selected-return">11,7 %</span> erwarteter Rendite.
+          </p>
         </div>
         <div class="badge-group">
           <span id="invested-wealth" class="badge">–</span>
@@ -65,9 +96,9 @@
         </div>
       </div>
       <canvas id="wealth-chart" aria-label="Diagramm Vermögensentwicklung"></canvas>
-      <p class="chart-note muted">
+      <p id="chart-note" class="chart-note muted">
         Die Berechnung nimmt an, dass Ihr verfügbarer Betrag einmal pro Jahr investiert wird und das
-        gesamte Vermögen jedes Jahr um 8&nbsp;% wächst.
+        gesamte Vermögen jedes Jahr um 11,7&nbsp;% wächst.
       </p>
     </section>
 
