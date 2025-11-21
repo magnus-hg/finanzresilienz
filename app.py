@@ -47,7 +47,37 @@ def est_2026(zve: float) -> float:
     return 0.45 * x - 19_470.38
 
 
-def tax_rates(zve: float) -> Tuple[float, float, float]:
+def _marginal_rate(zve: float) -> float:
+    x = int(zve)
+    if x <= 12_348:
+        return 0.0
+    if x <= 17_799:
+        y = (x - 12_348) / 10_000
+        return (2 * 914.51 * y + 1_400.0) / 10_000 * 100
+    if x <= 69_878:
+        z = (x - 17_799) / 10_000
+        return (2 * 173.1 * z + 2_397.0) / 10_000 * 100
+    if x <= 277_825:
+        return 42.0
+    return 45.0
+
+
+def est_2026_married(zve1: float, zve2: float) -> float:
+    """
+    Einkommensteuer für Ehegatten/Lebenspartner im Splittingtarif 2026.
+
+    Vorgehen:
+      - gemeinsames zvE = zve1 + zve2
+      - halbieren
+      - Grundtarif (est_2026) auf das halbe zvE anwenden
+      - Ergebnis verdoppeln
+    """
+    total = zve1 + zve2
+    half = total / 2.0
+    return 2.0 * est_2026(half)
+
+
+def tax_rates_single(zve: float) -> Tuple[float, float, float]:
     """
     Returns:
       est: Einkommensteuer
@@ -57,22 +87,19 @@ def tax_rates(zve: float) -> Tuple[float, float, float]:
 
     x = int(zve)
     est = est_2026(zve)
-
     avg_rate = est / x * 100 if x > 0 else 0
+    marginal = _marginal_rate(x)
+    return est, avg_rate, marginal
 
-    if x <= 12_348:
-        marginal = 0.0
-    elif x <= 17_799:
-        y = (x - 12_348) / 10_000
-        marginal = (2 * 914.51 * y + 1_400.0) / 10_000 * 100
-    elif x <= 69_878:
-        z = (x - 17_799) / 10_000
-        marginal = (2 * 173.1 * z + 2_397.0) / 10_000 * 100
-    elif x <= 277_825:
-        marginal = 42.0
-    else:
-        marginal = 45.0
 
+def tax_rates_married(zve1: float, zve2: float) -> Tuple[float, float, float]:
+    total_income = max(zve1 + zve2, 0.0)
+    if total_income <= 0:
+        return 0.0, 0.0, 0.0
+
+    est = est_2026_married(zve1, zve2)
+    avg_rate = est / total_income * 100
+    marginal = _marginal_rate(total_income / 2.0)
     return est, avg_rate, marginal
 
 
@@ -523,9 +550,23 @@ def average_rent():
 @app.route("/api/tax", methods=["POST"])
 def calculate_tax():
     payload = request.get_json(silent=True) or {}
-    zve = max(_json_float(payload, "zve", 0.0), 0.0)
+    primary_zve = max(_json_float(payload, "zve", 0.0), 0.0)
+    partner_zve = max(_json_float(payload, "partner_zve", 0.0), 0.0)
+    filing_status = (payload.get("filing_status") or "single").lower()
 
-    est, avg_rate, marginal_rate = tax_rates(zve)
+    if filing_status == "married":
+        est, avg_rate, marginal_rate = tax_rates_married(primary_zve, partner_zve)
+        total_zve = primary_zve + partner_zve
+
+        def _tax_calc(income: float) -> Tuple[float, float, float]:
+            return tax_rates_married(income, 0.0)
+
+    else:
+        est, avg_rate, marginal_rate = tax_rates_single(primary_zve)
+        total_zve = primary_zve
+
+        def _tax_calc(income: float) -> Tuple[float, float, float]:
+            return tax_rates_single(income)
 
     def _tax_curve(max_income: float, step: float = 1_000.0) -> list[dict]:
         capped_income = max(max_income, 300_000)
@@ -533,7 +574,7 @@ def calculate_tax():
         income = 0.0
 
         while income <= capped_income:
-            est_point, avg_point, marginal_point = tax_rates(income)
+            est_point, avg_point, marginal_point = _tax_calc(income)
             points.append(
                 {
                     "zve": round(income, 2),
@@ -546,7 +587,7 @@ def calculate_tax():
 
         if capped_income % step != 0:
             # Ensure the upper bound is included for consistent chart lines
-            est_point, avg_point, marginal_point = tax_rates(capped_income)
+            est_point, avg_point, marginal_point = _tax_calc(capped_income)
             points.append(
                 {
                     "zve": round(capped_income, 2),
@@ -560,11 +601,13 @@ def calculate_tax():
 
     return jsonify(
         {
-            "zve": zve,
+            "zve": total_zve,
             "est": round(est, 2),
             "avg_rate": round(avg_rate, 2),
             "marginal_rate": round(marginal_rate, 2),
-            "curve": _tax_curve(max_income=zve),
+            "curve": _tax_curve(max_income=total_zve),
+            "filing_status": filing_status,
+            "partner_zve": partner_zve if filing_status == "married" else 0.0,
         }
     )
 

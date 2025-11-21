@@ -1,6 +1,9 @@
 (function () {
   const form = document.getElementById('tax-form');
+  const filingStatusInput = document.getElementById('filing-status');
   const zveInput = document.getElementById('zve');
+  const partnerZveInput = document.getElementById('partner-zve');
+  const partnerField = document.querySelector('[data-partner-field]');
   const taxAmountEl = document.getElementById('tax-amount');
   const avgRateEl = document.getElementById('avg-rate');
   const marginalRateEl = document.getElementById('marginal-rate');
@@ -137,13 +140,36 @@
     if (stored.zve !== undefined) {
       zveInput.value = stored.zve;
     }
+    if (stored.filing_status) {
+      filingStatusInput.value = stored.filing_status;
+    }
+    if (stored.partner_zve !== undefined) {
+      partnerZveInput.value = stored.partner_zve;
+    }
+
+    togglePartnerField();
+  }
+
+  function togglePartnerField() {
+    const isMarried = filingStatusInput.value === 'married';
+    partnerField.hidden = !isMarried;
+    if (!isMarried) {
+      partnerZveInput.value = '';
+    }
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
     const zve = parseFloat(zveInput.value);
+    const filingStatus = filingStatusInput.value || 'single';
+    const partnerZveRaw = partnerZveInput.value;
+    const partnerZve = filingStatus === 'married' ? parseFloat(partnerZveRaw || '0') : 0;
     if (Number.isNaN(zve) || zve < 0) {
       alert('Bitte ein gültiges zu versteuerndes Einkommen eingeben.');
+      return;
+    }
+    if (filingStatus === 'married' && (Number.isNaN(partnerZve) || partnerZve < 0)) {
+      alert('Bitte ein gültiges zvE für den Partner/die Partnerin eingeben.');
       return;
     }
 
@@ -153,7 +179,7 @@
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ zve }),
+        body: JSON.stringify({ zve, filing_status: filingStatus, partner_zve: partnerZve }),
       });
 
       if (!response.ok) {
@@ -166,7 +192,11 @@
       marginalRateEl.textContent = formatPercentage(data.marginal_rate);
 
       buildChart(data.curve, data.zve, data.avg_rate, data.marginal_rate);
-      window.userDataStore?.save?.({ zve });
+      window.userDataStore?.save?.({
+        zve,
+        filing_status: filingStatus,
+        partner_zve: filingStatus === 'married' ? partnerZve : 0,
+      });
     } catch (error) {
       console.error(error);
       alert('Die Steuerberechnung ist fehlgeschlagen. Bitte erneut versuchen.');
@@ -174,5 +204,6 @@
   }
 
   populateFromStorage();
+  filingStatusInput.addEventListener('change', togglePartnerField);
   form.addEventListener('submit', handleSubmit);
 })();
