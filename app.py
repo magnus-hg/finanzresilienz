@@ -18,35 +18,33 @@ DEFAULT_TILGUNG_RATE = 0.04
 ADDITIONAL_COST_RATE = 0.105
 
 
-def est_2025(zve: float) -> float:
+def est_2026(zve: float) -> float:
     """
-    Einkommensteuer 2025 (vereinfachte Implementierung) mit
-    stetigen Übergängen an 66.760 € und 277.825 €.
+    Einkommensteuer nach § 32a EStG (Grundtarif) gemäß:
+      a) bis 12.348 €:       0
+      b) 12.349–17.799 €:    (914,51*y + 1.400)*y, y = (zvE - 12.348)/10.000
+      c) 17.800–69.878 €:    (173,1*z + 2.397)*z + 1.034,87, z = (zvE - 17.799)/10.000
+      d) 69.879–277.825 €:   0,42*zvE - 11.135,63
+      e) ab 277.826 €:       0,45*zvE - 19.470,38
+    zvE wird wie im Gesetz auf volle Euro abgerundet.
     """
+    x = int(zve)  # auf volle Euro abrunden
 
-    y = (zve - 11_604) / 10_000
-    z = (zve - 17_005) / 10_000
+    if x <= 12_348:
+        return 0.0
 
-    if zve <= 11_604:
-        tax = 0.0
+    if x <= 17_799:
+        y = (x - 12_348) / 10_000
+        return (914.51 * y + 1_400.0) * y
 
-    elif zve <= 17_005:
-        # Progressionszone 1
-        tax = (922.98 * y + 1_400.0) * y
+    if x <= 69_878:
+        z = (x - 17_799) / 10_000
+        return (173.1 * z + 2_397.0) * z + 1_034.87
 
-    elif zve <= 66_760:
-        # Progressionszone 2
-        tax = (181.19 * z + 2_397.0) * z + 1_028.0
+    if x <= 277_825:
+        return 0.42 * x - 11_135.63
 
-    elif zve <= 277_825:
-        # 42%-Zone, Konstante so kalibriert, dass bei 66.760 € kein Sprung entsteht
-        tax = 0.42 * zve - 10_599.4592907025
-
-    else:
-        # 45%-Zone, Konstante so kalibriert, dass bei 277.825 € kein Sprung entsteht
-        tax = 0.45 * zve - 18_934.209290702507
-
-    return tax
+    return 0.45 * x - 19_470.38
 
 
 def tax_rates(zve: float) -> Tuple[float, float, float]:
@@ -57,22 +55,23 @@ def tax_rates(zve: float) -> Tuple[float, float, float]:
       marginal_rate: Grenzsteuersatz (in %)
     """
 
-    est = est_2025(zve)
+    x = int(zve)
+    est = est_2026(zve)
 
-    avg_rate = est / zve * 100 if zve > 0 else 0
+    avg_rate = est / x * 100 if x > 0 else 0
 
-    if zve <= 11_604:
-        marginal = 0
-    elif zve <= 17_005:
-        y = (zve - 11_604) / 10_000
-        marginal = (2 * 922.98 * y + 1_400) / 10_000 * 100
-    elif zve <= 66_760:
-        z = (zve - 17_005) / 10_000
-        marginal = (2 * 181.19 * z + 2_397) / 10_000 * 100
-    elif zve <= 277_825:
-        marginal = 42
+    if x <= 12_348:
+        marginal = 0.0
+    elif x <= 17_799:
+        y = (x - 12_348) / 10_000
+        marginal = (2 * 914.51 * y + 1_400.0) / 10_000 * 100
+    elif x <= 69_878:
+        z = (x - 17_799) / 10_000
+        marginal = (2 * 173.1 * z + 2_397.0) / 10_000 * 100
+    elif x <= 277_825:
+        marginal = 42.0
     else:
-        marginal = 45
+        marginal = 45.0
 
     return est, avg_rate, marginal
 
