@@ -2,6 +2,7 @@ const RETIREMENT_AGE = 67;
 
 const form = document.getElementById('projection-form');
 const ageInput = document.getElementById('age');
+const initialWealthInput = document.getElementById('initial-wealth');
 const incomeInput = document.getElementById('income');
 const etfSelect = document.getElementById('etf-choice');
 const yearsOutput = document.getElementById('years-to-retirement');
@@ -18,6 +19,9 @@ const savedUserData = window.userDataStore ? userDataStore.load() : {};
 function populateInitialValues() {
   if (typeof savedUserData.age === 'number') {
     ageInput.value = savedUserData.age;
+  }
+  if (typeof savedUserData.initialWealth === 'number') {
+    initialWealthInput.value = savedUserData.initialWealth;
   }
   if (typeof savedUserData.monthlyRate === 'number') {
     incomeInput.value = savedUserData.monthlyRate;
@@ -42,6 +46,7 @@ function persistNumberInput(input, key) {
 
 populateInitialValues();
 persistNumberInput(ageInput, 'age');
+persistNumberInput(initialWealthInput, 'initialWealth');
 persistNumberInput(incomeInput, 'monthlyRate');
 if (etfSelect) {
   etfSelect.addEventListener('change', () => {
@@ -75,13 +80,13 @@ function getSelectedEtfName() {
   return selectedOption?.dataset.label || selectedOption?.textContent || 'ETF';
 }
 
-function calculateProjection(age, monthlyIncome, returnRate) {
+function calculateProjection(age, monthlyIncome, returnRate, initialWealth = 0) {
   const yearsToRetirement = Math.max(RETIREMENT_AGE - age, 0);
   const annualContribution = monthlyIncome * 12;
   const dataPoints = [];
   const currentYear = new Date().getFullYear();
 
-  let wealth = 0;
+  let wealth = initialWealth;
   for (let year = 1; year <= yearsToRetirement; year += 1) {
     wealth = (wealth + annualContribution) * (1 + returnRate);
     dataPoints.push({
@@ -92,7 +97,7 @@ function calculateProjection(age, monthlyIncome, returnRate) {
     });
   }
 
-  const totalInvested = annualContribution * yearsToRetirement;
+  const totalInvested = initialWealth + annualContribution * yearsToRetirement;
 
   return {
     yearsToRetirement,
@@ -174,15 +179,24 @@ function updateChart(dataPoints) {
 }
 
 function runProjection(age, income, { silent = false } = {}) {
-  const hasValidValues =
-    Number.isFinite(age) && Number.isFinite(income) && age > 0 && income >= 0;
+  const initialWealthValue =
+    initialWealthInput?.value === '' || initialWealthInput?.value == null
+      ? 0
+      : Number(initialWealthInput.value);
+    const hasValidValues =
+      Number.isFinite(age) &&
+      Number.isFinite(income) &&
+      Number.isFinite(initialWealthValue) &&
+      age > 0 &&
+      income >= 0 &&
+      initialWealthValue >= 0;
 
-  if (!hasValidValues) {
-    if (!silent) {
-      alert('Bitte geben Sie gültige Werte für Alter und Einkommen ein.');
+    if (!hasValidValues) {
+      if (!silent) {
+        alert('Bitte geben Sie gültige Werte für Alter, Sparrate und Startvermögen ein.');
+      }
+      return false;
     }
-    return false;
-  }
 
   if (age >= RETIREMENT_AGE) {
     yearsOutput.textContent = '0';
@@ -200,12 +214,17 @@ function runProjection(age, income, { silent = false } = {}) {
 
   const returnRate = getSelectedReturnRate();
   const etfName = getSelectedEtfName();
-  const projection = calculateProjection(age, income, returnRate);
+  const projection = calculateProjection(
+    age,
+    income,
+    returnRate,
+    Number.isFinite(initialWealthValue) ? initialWealthValue : 0,
+  );
   updateOutputs(projection);
   updateChart(projection.dataPoints);
   if (chartNote) {
     chartNote.textContent =
-      'Die Berechnung nimmt an, dass Ihr verfügbarer Betrag einmal pro Jahr investiert wird und das gesamte Vermögen jedes Jahr um ' +
+      'Die Berechnung nimmt an, dass Ihr verfügbarer Betrag einmal pro Jahr investiert wird, ein optionales Startvermögen im ersten Jahr investiert wird und das gesamte Vermögen jedes Jahr um ' +
       formatPercent(returnRate) +
       ' wächst.';
   }
@@ -233,7 +252,8 @@ function handleFormSubmit(event) {
     return;
   }
 
-  userDataStore.save({ age, monthlyRate: income });
+  const initialWealth = Number(initialWealthInput?.value) || 0;
+  userDataStore.save({ age, monthlyRate: income, initialWealth });
 }
 
 const hasPrefilledValues = ageInput.value !== '' && incomeInput.value !== '';
