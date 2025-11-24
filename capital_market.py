@@ -3,7 +3,7 @@ from dataclasses import asdict, dataclass
 import random
 from typing import List, Optional, Tuple
 
-from utils import MAX_AMORTIZATION_YEARS, mortgage_schedule
+from loan_utils import MAX_AMORTIZATION_YEARS, mortgage_schedule
 
 DEFAULT_INTEREST_RATE = 0.01
 DEFAULT_TILGUNG_RATE = 0.04
