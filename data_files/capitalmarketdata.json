@@ -2,16 +2,16 @@
 	{
 		"name": "iShares Core S&P 500",
 		"isin": "IE00B5BMR087",
-		"return": "14,4 %"
+		"return": "0.144"
 	},
 	{
 		"name": "Amundi Core STOXX Europe 600 UCITS ETF Acc",
 		"isin": "LU0908500753",
-		"return": "6,7 %"
+		"return": "0.067"
 	},
 	{
 		"name": "iShares Core MSCI World UCITS ETF",
 		"isin": "IE00B4L5Y983",
-		"return": "11,7 %"
+		"return": "0.117"
 	}
 ]
