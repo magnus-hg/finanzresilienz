@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from loan_utils import amortization_step, calc_annuity
+
 
 @dataclass
 class PropertyParams:
@@ -36,34 +38,6 @@ class SimulationParams:
     loan_params: LoanParams
     rent_params: RentParams
     tax_rate: float = 0.0              # Körperschaft / Einkommen ∼ einfach pauschal; 0 wenn ignorieren
-
-
-
-def calc_annuity(principal: float, rate: float, years: int) -> float:
-    """
-    Klassische Annuität: A = P * i / (1 - (1 + i)^-n)
-    principal: Darlehensbetrag
-    rate: Jahreszinssatz (z.B. 0.035)
-    years: Laufzeit in Jahren
-    """
-    if rate == 0:
-        return principal / years
-    factor = (rate) / (1 - (1 + rate) ** (-years))
-    return principal * factor
-
-
-def amortization_step(restschuld: float, rate: float, annuity: float) -> tuple[float, float, float]:
-    """
-    Eine Jahresperiode:
-    - Zinsen = Restschuld * rate
-    - Tilgung = Annuität - Zinsen
-    - Neue Restschuld = Restschuld - Tilgung
-    """
-    interest = restschuld * rate
-    repayment = annuity - interest
-    new_rest = restschuld - repayment
-    return new_rest, interest, repayment
-
 
 
 def rent_for_year(params: RentParams, year_index: int) -> tuple[float, float, float]:

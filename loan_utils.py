@@ -1,3 +1,4 @@
+"""Shared loan-related calculations."""
 from dataclasses import dataclass
 from typing import List, Tuple
 
@@ -12,6 +13,24 @@ class YearRecord:
     interest_paid: float
     principal_paid: float
     remaining_principal: float
+
+
+def calc_annuity(principal: float, rate: float, years: int) -> float:
+    """Calculate the annual annuity payment for a loan."""
+
+    if rate == 0:
+        return principal / years
+    factor = rate / (1 - (1 + rate) ** (-years))
+    return principal * factor
+
+
+def amortization_step(balance: float, rate: float, annuity: float) -> tuple[float, float, float]:
+    """Execute a single amortization period using an annuity repayment."""
+
+    interest = balance * rate
+    repayment = annuity - interest
+    new_balance = balance - repayment
+    return new_balance, interest, repayment
 
 
 def mortgage_schedule(
@@ -36,35 +55,34 @@ def mortgage_schedule(
     year = 1
 
     while balance > 0 and year <= max_years:
-        interest = balance * interest_rate
-        principal_payment = annuity - interest
+        new_balance, interest, principal_payment = amortization_step(balance, interest_rate, annuity)
 
         if principal_payment > balance:
             principal_payment = balance
             payment_this_year = interest + principal_payment
+            new_balance = 0.0
         else:
             payment_this_year = annuity
-
-        balance -= principal_payment
 
         total_interest += interest
         total_paid += payment_this_year
 
-        if abs(balance) < 0.01:
-            balance = 0.0
+        if abs(new_balance) < 0.01:
+            new_balance = 0.0
 
         schedule.append(
             YearRecord(
                 year=year,
                 interest_paid=interest,
                 principal_paid=principal_payment,
-                remaining_principal=balance,
+                remaining_principal=new_balance,
             )
         )
 
-        if balance <= 0:
+        if new_balance <= 0:
             break
 
+        balance = new_balance
         year += 1
 
     return schedule, total_interest, total_paid
