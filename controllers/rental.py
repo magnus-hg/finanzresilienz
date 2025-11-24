@@ -1,9 +1,9 @@
 from dataclasses import asdict
-from typing import Any, List
+from typing import List
 
-from buy_to_let_model import LoanParams, PropertyParams, RentParams, SimulationParams, simulate
 from capital_market import ADDITIONAL_COST_RATE, DEFAULT_INTEREST_RATE
 from controllers.controller_utils import json_float, json_int
+from real_estate import LoanParams, PropertyParams, RentParams, SimulationParams, simulate
 
 
 def _build_simulation_params(payload: dict) -> SimulationParams:
