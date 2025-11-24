@@ -57,3 +57,10 @@ Returns the mocked average purchase price per square meter for the supplied coor
 Returns the mocked average rent price per square meter for the supplied coordinates and radius. Accepts `latitude`, `longitude` and `radius` as optional query parameters.
 
 All endpoints respond with JSON documents and can be safely extended or replaced with real data sources in the future.
+
+## Tax calculations
+
+The 2026 income tax formulas and helper functions live in `tax_calculations.py`.
+`app.py` imports the module to serve tax-related metrics (e.g., `/api/tax`), so
+future adjustments to the calculation logic should be made in that dedicated
+module.
