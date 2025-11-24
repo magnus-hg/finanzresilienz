@@ -1,9 +1,16 @@
-import random
-from dataclasses import dataclass, asdict
-from typing import List, Optional, Tuple
+from dataclasses import asdict
+from typing import Tuple
 
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 
+from capital_market import (
+    ADDITIONAL_COST_RATE,
+    DEFAULT_INTEREST_RATE,
+    DEFAULT_TILGUNG_RATE,
+    average_price_per_sqm,
+    build_property_payload,
+    collect_average_price,
+)
 from buy_to_let_model import (
     LoanParams,
     PropertyParams,
@@ -19,67 +26,8 @@ from tax_calculations import (
 )
 from utils import MAX_AMORTIZATION_YEARS, mortgage_schedule
 
-DEFAULT_INTEREST_RATE = 0.01
-DEFAULT_TILGUNG_RATE = 0.04
-ADDITIONAL_COST_RATE = 0.105
-
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
-
-
-@dataclass
-class Property:
-    identifier: str
-    price_eur: int
-    living_space_sqm: float
-    rooms: int
-    latitude: float
-    longitude: float
-    address: str
-    property_type: str
-    rent_price_eur: Optional[int] = None
-
-    @property
-    def price_per_sqm(self) -> float:
-        return round(self.price_eur / self.living_space_sqm, 2)
-
-    @property
-    def rent_per_sqm(self) -> Optional[float]:
-        if self.rent_price_eur is None:
-            return None
-        return round(self.rent_price_eur / self.living_space_sqm, 2)
-
-
-
-
-def _deg_per_km() -> float:
-    """Approximate number of degrees latitude per kilometre."""
-    return 1.0 / 111.0
-
-
-def _random_coordinate(base: float, radius_km: float) -> float:
-    jitter = random.uniform(-radius_km, radius_km) * _deg_per_km()
-    return base + jitter
-
-
-def _generate_property(base_lat: float, base_lon: float, radius: float, index: int) -> Property:
-    size = round(random.uniform(35, 160), 2)
-    price = int(random.uniform(100_000, 1_500_000))
-    rooms = random.randint(1, 6)
-    rent_price = int(random.uniform(800, 4000)) if random.random() > 0.4 else None
-    return Property(
-        identifier=f"property-{index}",
-        price_eur=price,
-        living_space_sqm=size,
-        rooms=rooms,
-        latitude=_random_coordinate(base_lat, radius),
-        longitude=_random_coordinate(base_lon, radius),
-        address=f"Random Street {random.randint(1, 200)}, {random.randint(10000, 99999)} Sample City",
-        property_type=random.choice(["apartment", "loft", "condo", "house"]),
-        rent_price_eur=rent_price,
-    )
-
-
 def _parse_float(param: str, default: float) -> float:
     value = request.args.get(param)
     if value is None:
@@ -120,122 +68,6 @@ def _json_int(payload: dict, key: str, default: int) -> int:
         return default
 
 
-def _generate_properties(count: int, base_lat: float, base_lon: float, radius: float) -> List[Property]:
-    return [_generate_property(base_lat, base_lon, radius, i) for i in range(count)]
-
-
-def _filter_properties(properties: List[Property], min_price: float, max_price: float,
-                        min_size: float, max_size: float, min_rooms: int, max_rooms: int) -> List[Property]:
-    result = []
-    for prop in properties:
-        if not (min_price <= prop.price_eur <= max_price):
-            continue
-        if not (min_size <= prop.living_space_sqm <= max_size):
-            continue
-        if not (min_rooms <= prop.rooms <= max_rooms):
-            continue
-        result.append(prop)
-    return result
-
-
-def _estimate_rent(living_space_sqm: float, rent_per_sqm: Optional[float], fallback_rent_per_sqm: float) -> Tuple[float, float]:
-    rent_rate = rent_per_sqm if rent_per_sqm is not None else fallback_rent_per_sqm
-    if rent_rate <= 0 or living_space_sqm <= 0:
-        return 0.0, rent_per_sqm or 0.0
-    monthly_rent = rent_rate * living_space_sqm
-    return round(monthly_rent, 2), rent_rate
-
-
-def _build_property_payload(
-    latitude: float,
-    longitude: float,
-    radius: float,
-    min_price: float,
-    max_price: float,
-    min_size: float,
-    max_size: float,
-    min_rooms: int,
-    max_rooms: int,
-    interest_rate: float,
-    initial_tilgung_rate: float,
-    available_assets: float,
-    additional_cost_rate: float,
-) -> List[dict]:
-    properties = _generate_properties(30, latitude, longitude, radius)
-    filtered = _filter_properties(properties, min_price, max_price, min_size, max_size, min_rooms, max_rooms)
-    filtered.sort(key=lambda prop: prop.price_eur, reverse=True)
-    average_rent_per_sqm = _average_price_per_sqm(latitude, longitude, radius, rent=True)
-
-    return [
-        _serialize_property_with_mortgage(
-            prop,
-            interest_rate,
-            initial_tilgung_rate,
-            available_assets,
-            additional_cost_rate,
-            average_rent_per_sqm,
-        )
-        for prop in filtered
-    ]
-
-
-def _serialize_property_with_mortgage(
-    prop: Property,
-    interest_rate: float,
-    initial_tilgung_rate: float,
-    available_assets: float,
-    additional_cost_rate: float,
-    average_rent_per_sqm: float,
-) -> dict:
-    usable_assets = max(available_assets, 0)
-    cost_rate = max(additional_cost_rate, 0)
-    total_price = prop.price_eur * (1 + cost_rate)
-    additional_costs = total_price - prop.price_eur
-    loan_amount = max(total_price - usable_assets, 0)
-
-    estimated_rent_month, used_rent_rate = _estimate_rent(
-        prop.living_space_sqm,
-        prop.rent_per_sqm,
-        average_rent_per_sqm,
-    )
-
-    if loan_amount > 0:
-        schedule, total_interest, total_paid = mortgage_schedule(
-            loan_amount,
-            interest_rate,
-            initial_tilgung_rate,
-            MAX_AMORTIZATION_YEARS,
-        )
-        mortgage_years = len(schedule)
-        annual_annuity = loan_amount * (interest_rate + initial_tilgung_rate)
-        monthly_rate = annual_annuity / 12 if annual_annuity > 0 else 0
-    else:
-        schedule = []
-        total_interest = 0.0
-        total_paid = 0.0
-        mortgage_years = 0
-        monthly_rate = 0.0
-
-    return {
-        **asdict(prop),
-        "price_per_sqm": prop.price_per_sqm,
-        "rent_per_sqm": prop.rent_per_sqm,
-        "available_assets": usable_assets,
-        "additional_costs_eur": round(additional_costs),
-        "total_price_eur": round(total_price),
-        "additional_cost_rate": cost_rate,
-        "mortgage_years": mortgage_years,
-        "mortgage_total_interest": round(total_interest, 2),
-        "mortgage_total_paid": round(total_paid, 2),
-        "mortgage_monthly_rate": round(monthly_rate, 2),
-        "mortgage_interest_rate": interest_rate,
-        "mortgage_tilgung_rate": initial_tilgung_rate,
-        "mortgage_loan_amount": loan_amount,
-        "estimated_rent_month": estimated_rent_month,
-        "estimated_rent_per_sqm": used_rent_rate,
-    }
-
-
 @app.route("/properties")
 def list_properties():
     min_price = _parse_float("min_price", 0)
@@ -252,7 +84,7 @@ def list_properties():
     available_assets = max(_parse_float("available_assets", 0.0), 0.0)
     additional_cost_rate = max(_parse_float("additional_cost_rate", ADDITIONAL_COST_RATE), 0.0)
 
-    payload = _build_property_payload(
+    payload = build_property_payload(
         latitude,
         longitude,
         radius,
@@ -267,68 +99,6 @@ def list_properties():
         available_assets,
         additional_cost_rate,
     )
-    return jsonify({
-        "properties": payload,
-        "count": len(payload),
-        "interest_rate": interest_rate,
-        "tilgung_rate": initial_tilgung_rate,
-        "additional_cost_rate": additional_cost_rate,
-    })
-
-
-def _average_price_per_sqm(base_lat: float, base_lon: float, radius: float, rent: bool = False) -> float:
-    properties = _generate_properties(50, base_lat, base_lon, radius)
-    per_sqm_values = []
-    for prop in properties:
-        value = prop.rent_per_sqm if rent else prop.price_per_sqm
-        if value is not None:
-            per_sqm_values.append(value)
-    if not per_sqm_values:
-        return 0.0
-    return round(sum(per_sqm_values) / len(per_sqm_values), 2)
-
-
-def _collect_average_price(
-    latitude: float,
-    longitude: float,
-    radius: float,
-    min_price: float,
-    max_price: float,
-    min_size: float,
-    max_size: float,
-    min_rooms: int,
-    max_rooms: int,
-    samples: int,
-    interest_rate: float,
-    initial_tilgung_rate: float,
-    additional_cost_rate: float,
-) -> Tuple[float, int]:
-    observed_values: List[float] = []
-    for _ in range(samples):
-        payload = _build_property_payload(
-            latitude,
-            longitude,
-            radius,
-            min_price,
-            max_price,
-            min_size,
-            max_size,
-            min_rooms,
-            max_rooms,
-            interest_rate,
-            initial_tilgung_rate,
-            0.0,
-            additional_cost_rate,
-        )
-        for prop in payload:
-            value = prop.get("price_per_sqm")
-            if isinstance(value, (int, float)) and value > 0:
-                observed_values.append(value)
-    if not observed_values:
-        return 0.0, 0
-    return round(sum(observed_values) / len(observed_values), 2), len(observed_values)
-
-
 def _build_simulation_params(payload: dict) -> SimulationParams:
     purchase_price = _json_float(payload, "purchase_price", 400_000.0)
     transaction_cost_factor = _json_float(
@@ -425,7 +195,7 @@ def average_price():
     initial_tilgung_rate = max(_parse_float("tilgung_rate", DEFAULT_TILGUNG_RATE), 0.0001)
     additional_cost_rate = max(_parse_float("additional_cost_rate", ADDITIONAL_COST_RATE), 0.0)
 
-    average_value, observations = _collect_average_price(
+    average_value, observations = collect_average_price(
         latitude,
         longitude,
         radius,
@@ -459,7 +229,7 @@ def average_rent():
     latitude = _parse_float("latitude", 52.52)
     longitude = _parse_float("longitude", 13.405)
     radius = max(_parse_float("radius", 5), 0.1)
-    average_value = _average_price_per_sqm(latitude, longitude, radius, rent=True)
+    average_value = average_price_per_sqm(latitude, longitude, radius, rent=True)
     return jsonify({
         "latitude": latitude,
         "longitude": longitude,
