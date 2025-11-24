@@ -1,36 +1,14 @@
 """Capital market utilities for property search and mortgage calculations."""
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 import random
 from typing import List, Optional, Tuple
 
+from capital_market.models import CapitalMarketInvestment, Property
 from real_estate.finance import MAX_AMORTIZATION_YEARS, mortgage_schedule
 
 DEFAULT_INTEREST_RATE = 0.01
 DEFAULT_TILGUNG_RATE = 0.04
 ADDITIONAL_COST_RATE = 0.105
-
-
-@dataclass
-class Property:
-    identifier: str
-    price_eur: int
-    living_space_sqm: float
-    rooms: int
-    latitude: float
-    longitude: float
-    address: str
-    property_type: str
-    rent_price_eur: Optional[int] = None
-
-    @property
-    def price_per_sqm(self) -> float:
-        return round(self.price_eur / self.living_space_sqm, 2)
-
-    @property
-    def rent_per_sqm(self) -> Optional[float]:
-        if self.rent_price_eur is None:
-            return None
-        return round(self.rent_price_eur / self.living_space_sqm, 2)
 
 
 def _deg_per_km() -> float:
