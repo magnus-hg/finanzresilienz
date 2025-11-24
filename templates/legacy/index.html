@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meine Finanzanalyse – Rentenprojektion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+  <main class="container">
+    <header>
+      <p class="eyebrow">Meine Finanzanalyse</p>
+      <h1>Wie entwickelt sich Ihr Vermögen bis zur Rente mit ETF-Sparen?</h1>
+      <p>
+        Geben Sie Ihr aktuelles Alter und den monatlich verfügbaren Betrag ein. Wir
+        berechnen daraus die Jahre bis zur Rente und simulieren, wie Ihr Vermögen
+        basierend auf Ihrer ETF-Auswahl wächst. Wählen Sie zwischen dem europäischen
+        Amundi Core STOXX Europe&nbsp;600 (6,7&nbsp;% p.a.), dem globalen iShares
+        MSCI World (11,7&nbsp;% p.a.) oder dem US-lastigen iShares S&amp;P&nbsp;500
+        (14,4&nbsp;% p.a.).
+      </p>
+    </header>
+
+    <section class="card">
+      <form id="projection-form" novalidate>
+        <div class="field">
+          <label for="age">Alter</label>
+          <input type="number" id="age" name="age" min="18" max="100" required />
+        </div>
+        <div class="field">
+          <label for="initial-wealth">Startvermögen (Einmalanlage)</label>
+          <input
+            type="number"
+            id="initial-wealth"
+            name="initial-wealth"
+            min="0"
+            step="1000"
+            placeholder="0"
+          />
+        </div>
+        <div class="field">
+          <label for="income">Mögliche Monatliche Sparrate (EUR)</label>
+          <input type="number" id="income" name="income" min="0" step="50" required />
+        </div>
+        <div class="field">
+          <label for="etf-choice">ETF auswählen</label>
+          <select id="etf-choice" name="etf-choice">
+            <option
+              value="LU0908500753"
+              data-return-rate="0.067"
+              data-label="Amundi Core STOXX Europe 600 UCITS ETF Acc"
+            >
+              Amundi Core STOXX Europe 600 UCITS ETF Acc – 6,7 % erwartete Rendite
+            </option>
+            <option
+              value="IE00B4L5Y983"
+              data-return-rate="0.117"
+              data-label="iShares Core MSCI World UCITS ETF"
+              selected
+            >
+              iShares Core MSCI World UCITS ETF – 11,7 % erwartete Rendite
+            </option>
+            <option
+              value="IE00B5BMR087"
+              data-return-rate="0.144"
+              data-label="iShares Core S&amp;P 500"
+            >
+              iShares Core S&amp;P 500 – 14,4 % erwartete Rendite
+            </option>
+          </select>
+        </div>
+        <button type="submit" class="primary">Vermögensentwicklung berechnen</button>
+      </form>
+    </section>
+
+    <section class="results-grid">
+      <article class="card highlight">
+        <h2>Jahre bis zur Rente</h2>
+        <p id="years-to-retirement" class="value">–</p>
+        <p class="muted">Ausgehend von einem Renteneintritt mit 67 Jahren.</p>
+      </article>
+      <article class="card">
+        <h2>Jährlicher Anlagebetrag</h2>
+        <p id="annual-investment" class="value">–</p>
+        <p class="muted">Berechnet aus Ihrem monatlich verfügbaren Einkommen.</p>
+      </article>
+    </section>
+
+    <section class="card chart-card">
+      <div class="chart-header">
+        <div>
+          <h2>Vermögensentwicklung</h2>
+          <p class="muted">
+            Prognose mit <span id="selected-etf">iShares Core MSCI World UCITS ETF</span>
+            und <span id="selected-return">11,7 %</span> erwarteter Rendite.
+          </p>
+        </div>
+        <div class="badge-group">
+          <span id="invested-wealth" class="badge">–</span>
+          <span id="final-wealth" class="badge">–</span>
+        </div>
+      </div>
+      <canvas id="wealth-chart" aria-label="Diagramm Vermögensentwicklung"></canvas>
+      <p id="chart-note" class="chart-note muted">
+        Die Berechnung nimmt an, dass Ihr verfügbarer Betrag einmal pro Jahr investiert wird und das
+        gesamte Vermögen jedes Jahr um 11,7&nbsp;% wächst.
+      </p>
+    </section>
+
+    <section class="card next-steps">
+      <h2>Was möchten Sie als nächstes tun?</h2>
+      <div class="next-steps-grid">
+        <div class="next-step-column">
+          <p class="column-title">
+            Beginnen Sie mit ihrem Sparplan mit einem der folgenden Broker
+          </p>
+          <div class="broker-buttons">
+            <a class="broker-button" href="#">Scalable Capital</a>
+            <a class="broker-button" href="#">finanzen.net zero</a>
+            <a class="broker-button" href="#">SMARTBROKER</a>
+            <a class="broker-button" href="#">Traders Place</a>
+            <a class="broker-button" href="#">Trade Republic</a>
+          </div>
+        </div>
+        <div class="next-step-column">
+          <p class="column-title">Berechne meine voraussichtliche Rente</p>
+          <button class="secondary">Jetzt berechnen</button>
+        </div>
+        <div class="next-step-column">
+          <p class="column-title">Aktuellen Steuersatz ermitteln</p>
+          <button
+            class="secondary"
+            type="button"
+            onclick="window.location.href='{{ url_for('tax_page') }}'"
+          >
+            Steuerrechner öffnen
+          </button>
+        </div>
+        <div class="next-step-column">
+          <p class="column-title">Kann ich mir eine Immobilie leisten</p>
+          <button
+            class="secondary"
+            type="button"
+            onclick="window.location.href='{{ url_for('mortgage_page') }}'"
+          >
+            Eigenheim kalkulieren
+          </button>
+          <button
+            class="secondary"
+            type="button"
+            onclick="window.location.href='{{ url_for('buy_to_let_page') }}'"
+          >
+            Vermietung simulieren
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"
+    crossorigin="anonymous"
+  ></script>
+  <script src="{{ url_for('static', filename='js/storage.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
