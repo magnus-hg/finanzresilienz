@@ -60,7 +60,7 @@ All endpoints respond with JSON documents and can be safely extended or replaced
 
 ## Tax calculations
 
-The 2026 income tax formulas and helper functions live in `tax_calculations.py`.
-`app.py` imports the module to serve tax-related metrics (e.g., `/api/tax`), so
-future adjustments to the calculation logic should be made in that dedicated
-module.
+The 2026 income tax formulas and helper functions live in the
+`tax_calculations` package. `app.py` imports the module to serve tax-related
+metrics (e.g., `/api/tax`), so future adjustments to the calculation logic
+should be made in that dedicated module.
