@@ -9,19 +9,19 @@
 		"rent_increase_per_year" : "0.02"
 	},
 	"geodata" : {
-		"germany_placeholder": {	
-			"avg_kaltmiete_euro_per_sqm": 10.0,
-			"avg_kaufpreis_euro_per_sqm": 4_000.0,
-			"avg_hausgeld_umlagefaehig_euro_per_sqm": 2.75,
-			"avg_hausgeld_nicht_umlagefaehig_euro_per_sqm": 1.25,
-			"nebekosten_factor": 1.107,
-		},
-		"plz_placeholder": {	
-			"avg_kaltmiete_euro_per_sqm": 12.0,
-			"avg_kaufpreis_euro_per_sqm": 5_000.0,
-			"avg_hausgeld_umlagefaehig_euro_per_sqm": 3,
-			"avg_hausgeld_nicht_umlagefaehig_euro_per_sqm": 1.5,
-			"nebekosten_factor": 1.106,
-		}
-	}
+                "germany_placeholder": {
+                        "avg_kaltmiete_euro_per_sqm": 10.0,
+                        "avg_kaufpreis_euro_per_sqm": 4000.0,
+                        "avg_hausgeld_umlagefaehig_euro_per_sqm": 2.75,
+                        "avg_hausgeld_nicht_umlagefaehig_euro_per_sqm": 1.25,
+                        "nebekosten_factor": 1.107
+                },
+                "plz_placeholder": {
+                        "avg_kaltmiete_euro_per_sqm": 12.0,
+                        "avg_kaufpreis_euro_per_sqm": 5000.0,
+                        "avg_hausgeld_umlagefaehig_euro_per_sqm": 3,
+                        "avg_hausgeld_nicht_umlagefaehig_euro_per_sqm": 1.5,
+                        "nebekosten_factor": 1.106
+                }
+        }
 }
