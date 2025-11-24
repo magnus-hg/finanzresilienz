@@ -707,3 +707,88 @@ canvas {
   margin: 0;
   font-size: 0.95rem;
 }
+
+.decision-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.option-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.option-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.option-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.option-label {
+  font-weight: 700;
+}
+
+.option-card input {
+  width: 20px;
+  height: 20px;
+  accent-color: currentColor;
+}
+
+.option-blue {
+  border-color: rgba(59, 130, 246, 0.6);
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+}
+
+.option-green {
+  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+}
+
+.option-orange {
+  border-color: rgba(249, 115, 22, 0.6);
+  background: rgba(249, 115, 22, 0.12);
+  color: #fdba74;
+}
+
+.option-card details {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  padding: 0.75rem 0.9rem;
+  color: var(--text);
+}
+
+.option-card summary {
+  cursor: pointer;
+  font-weight: 600;
+  outline: none;
+}
+
+.option-card summary::-webkit-details-marker {
+  color: currentColor;
+}
+
+.placeholder-text {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+}
