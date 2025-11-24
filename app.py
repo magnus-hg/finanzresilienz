@@ -657,6 +657,52 @@ def buy_to_let_simulation():
     })
 
 
+@app.route("/api/vermietung/max-affordable-size", methods=["POST"])
+def affordable_size_estimation():
+    payload = request.get_json(silent=True) or {}
+    
+    wealth = data.get("wealth", 200000)
+    rent = data.get("repayment_rate", 0.02)
+    interest = data.get("interest_rate", 0.04)
+    
+    price_per_square_meter = data.get("price_per_square_meter", 4000)
+    base_rent_per_square_meter = data.get("base_rent_per_square_meter", 10)
+    non_chargeable_operating_costs_per_square_meter = data.get("non_chargeable_operating_costs_per_square_meter", 1)
+    additional_purchase_costs_factor = data.get("additional_purchase_costs_factor", 1.105)
+
+    annuity = interest + rent
+    
+    nominator = - wealth * (annuity/12)
+    denominator = base_rent_per_square_meter - non_chargeable_operating_costs_per_square_meter - (annuity/12) * price_per_square_meter * additional_purchase_costs_factor
+    
+    maximally_affordable_size = nominator / denominator
+    
+    
+    
+    """
+    return jsonify({
+        "inputs": {
+            "property": asdict(params.property_params),
+            "loan": asdict(params.loan_params),
+            "rent": asdict(params.rent_params),
+            "tax_rate": params.tax_rate,
+            "start_year": params.start_year,
+            "n_years": params.n_years,
+        },
+        "summary": summary,
+        "records": [
+            {key: round(value, 2) if isinstance(value, (int, float)) else value for key, value in record.items()}
+            for record in records
+        ],
+        "total_investment_cost": round(
+            params.property_params.purchase_price
+            * (1 + params.property_params.transaction_cost_factor),
+            2,
+        ),
+    })
+    """
+
+
 @app.route("/")
 def home_page():
     return render_template("index.html")
