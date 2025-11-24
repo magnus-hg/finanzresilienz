@@ -792,3 +792,24 @@ canvas {
   margin: 0.75rem 0 0;
   color: var(--muted);
 }
+
+.details-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.capitalmarket-details {
+  display: grid;
+  gap: 0.35rem 0.75rem;
+}
+
+.capitalmarket-details div {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 0.35rem;
+}
+
+.capitalmarket-details dt {
+  font-weight: 600;
+}

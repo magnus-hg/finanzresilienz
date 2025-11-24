@@ -107,8 +107,30 @@
                 <span class="option-label">Kapitalmarktanlage</span>
               </div>
               <details>
-                <summary>Details hinzufügen</summary>
-                <p class="placeholder-text">Weitere Inhalte folgen.</p>
+                <summary aria-label="Kapitalmarkt-Details"></summary>
+                <div class="details-content">
+                  <label for="capitalmarket-select">Kapitalmarktprodukt auswählen</label>
+                  <select id="capitalmarket-select" name="capitalmarket-select">
+                    {% for entry in capitalmarket_data %}
+                    <option value="{{ loop.index0 }}">{{ entry.name }}</option>
+                    {% endfor %}
+                  </select>
+
+                  <dl class="capitalmarket-details">
+                    <div>
+                      <dt>Name</dt>
+                      <dd id="capitalmarket-name"></dd>
+                    </div>
+                    <div>
+                      <dt>ISIN</dt>
+                      <dd id="capitalmarket-isin"></dd>
+                    </div>
+                    <div>
+                      <dt>Jährliches Wachstum</dt>
+                      <dd id="capitalmarket-growth"></dd>
+                    </div>
+                  </dl>
+                </div>
               </details>
             </label>
 
@@ -118,7 +140,7 @@
                 <span class="option-label">Eigenheim</span>
               </div>
               <details>
-                <summary>Details hinzufügen</summary>
+                <summary aria-label="Eigenheim-Details"></summary>
                 <p class="placeholder-text">Weitere Inhalte folgen.</p>
               </details>
             </label>
@@ -129,7 +151,7 @@
                 <span class="option-label">Mietwohnung</span>
               </div>
               <details>
-                <summary>Details hinzufügen</summary>
+                <summary aria-label="Mietwohnung-Details"></summary>
                 <p class="placeholder-text">Weitere Inhalte folgen.</p>
               </details>
             </label>
@@ -141,6 +163,7 @@
 
   <script>
     window.helpTextsUrl = "{{ url_for('static', filename='config/help_texts.json') }}";
+    window.capitalMarketData = {{ capitalmarket_data | tojson }};
   </script>
   <script src="{{ url_for('static', filename='js/home.js') }}"></script>
 </body>

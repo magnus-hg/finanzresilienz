@@ -1,4 +1,6 @@
-from typing import Tuple
+import json
+from pathlib import Path
+from typing import Dict, Tuple
 
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 
@@ -12,6 +14,18 @@ from tax_calculations import (
 
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
+
+DATA_DIR = Path(__file__).parent / "data_files"
+
+
+def load_data_files() -> Dict[str, object]:
+    data_files: Dict[str, object] = {}
+
+    for file_path in DATA_DIR.glob("*.json"):
+        with file_path.open("r", encoding="utf-8") as file:
+            data_files[file_path.name] = json.load(file)
+
+    return data_files
 
 
 @app.route("/properties")
@@ -117,7 +131,10 @@ def buy_to_let_simulation():
 
 @app.route("/")
 def home_page():
-    return render_template("index.html")
+    data_files = load_data_files()
+    capitalmarket_data = data_files.get("capitalmarketdata.json", [])
+
+    return render_template("index.html", capitalmarket_data=capitalmarket_data)
 
 
 @app.route("/immobilienrechner")
