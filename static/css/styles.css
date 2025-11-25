@@ -813,3 +813,27 @@ canvas {
 .capitalmarket-details dt {
   font-weight: 600;
 }
+
+.simulation-controls {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.simulation-controls .sub-label {
+  font-weight: 600;
+}
+
+.chart-card {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+#capitalmarket-chart {
+  width: 100%;
+  min-height: 260px;
+  display: block;
+}

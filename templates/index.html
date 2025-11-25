@@ -50,23 +50,23 @@
 
         <div class="field">
           <div class="label-row">
-            <label for="monthly-savings">Wie viel können Sie monatlich sparen?</label>
+            <label for="yearly-savings">Wie viel können Sie jährlich sparen?</label>
             <button
               type="button"
               class="info-icon"
-              aria-label="Hilfe zur monatlichen Sparrate"
-              data-help-key="monthlySavings"
+              aria-label="Hilfe zur jährlichen Sparrate"
+              data-help-key="yearlySavings"
             >
               <span aria-hidden="true">i</span>
             </button>
           </div>
           <input
             type="number"
-            id="monthly-savings"
-            name="monthly-savings"
+            id="yearly-savings"
+            name="yearly-savings"
             min="0"
-            step="50"
-            placeholder="z. B. 400"
+            step="200"
+            placeholder="z. B. 4.800"
           />
         </div>
 
@@ -130,6 +130,32 @@
                       <dd id="capitalmarket-growth"></dd>
                     </div>
                   </dl>
+
+                  <div class="simulation-controls">
+                    <label class="sub-label" for="investment-years">Zeitraum (Jahre)</label>
+                    <input
+                      type="number"
+                      id="investment-years"
+                      name="investment-years"
+                      min="1"
+                      max="40"
+                      step="1"
+                      value="10"
+                    />
+                    <p class="muted helper-text">
+                      Die Simulation nutzt Ihr verfügbares Vermögen, Ihre jährliche Sparrate und die
+                      hinterlegte Rendite des gewählten Produkts.
+                    </p>
+                    <button type="button" id="simulate-portfolio">Vermögensentwicklung anzeigen</button>
+                  </div>
+
+                  <div class="chart-card" aria-live="polite">
+                    <canvas id="capitalmarket-chart" aria-label="Vermögensentwicklung"></canvas>
+                    <p id="capitalmarket-chart-empty" class="muted">
+                      Geben Sie Vermögen und jährliche Sparrate ein und starten Sie die Simulation, um die
+                      Entwicklung zu sehen.
+                    </p>
+                  </div>
                 </div>
               </details>
             </label>
