@@ -5,6 +5,7 @@ from typing import Dict, Tuple
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 from controllers import owner, rental
+from capital_market.models import simulate_market_investment
 from tax_calculations import (
     est_2026,
     est_2026_married,
@@ -127,6 +128,54 @@ def plz_market_data(plz: str):
 def buy_to_let_simulation():
     payload = request.get_json(silent=True) or {}
     return jsonify(rental.run_simulation(payload))
+
+
+@app.route("/api/capitalmarket/simulation", methods=["POST"])
+def capital_market_simulation():
+    payload = request.get_json(silent=True) or {}
+    product_index = int(payload.get("product_index", 0))
+    available_wealth = float(payload.get("available_wealth") or 0.0)
+    yearly_savings = float(payload.get("yearly_savings") or 0.0)
+    years = max(int(payload.get("years") or 0), 1)
+
+    data_files = load_data_files()
+    capitalmarket_data = data_files.get("capitalmarketdata.json", [])
+
+    if not isinstance(capitalmarket_data, list) or not capitalmarket_data:
+        return jsonify({"error": "Keine Kapitalmarktdaten vorhanden."}), 400
+
+    try:
+        product = capitalmarket_data[product_index]
+    except (IndexError, TypeError):
+        product = capitalmarket_data[0]
+
+    try:
+        expected_return = float(product.get("return") or 0.0)
+    except (TypeError, ValueError):
+        expected_return = 0.0
+
+    values, years_count = simulate_market_investment(
+        product.get("name", ""),
+        product.get("isin", ""),
+        expected_return,
+        available_wealth,
+        yearly_savings,
+        years,
+    )
+
+    timeseries = [{"year": index + 1, "value": value} for index, value in enumerate(values)]
+
+    return jsonify(
+        {
+            "product": {
+                "name": product.get("name", ""),
+                "isin": product.get("isin", ""),
+                "expected_return": expected_return,
+            },
+            "years": years_count,
+            "timeseries": timeseries,
+        }
+    )
 
 
 @app.route("/")
