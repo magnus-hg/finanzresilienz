@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const availableWealthInput = document.getElementById('available-wealth');
   const yearlySavingsInput = document.getElementById('yearly-savings');
   const yearsInput = document.getElementById('investment-years');
-  const simulateButton = document.getElementById('simulate-portfolio');
   const chartCanvas = document.getElementById('capitalmarket-chart');
   const chartEmptyState = document.getElementById('capitalmarket-chart-empty');
   const chartNote = document.getElementById('capitalmarket-chart-note');
@@ -256,10 +255,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCapitalMarketDetails(0);
   }
 
-  if (simulateButton) {
-    simulateButton.addEventListener('click', runSimulation);
-  }
-
   if (availableWealthInput) {
     availableWealthInput.addEventListener('input', scheduleSimulation);
   }
@@ -272,10 +267,5 @@ document.addEventListener('DOMContentLoaded', () => {
     yearsInput.addEventListener('input', scheduleSimulation);
   }
 
-  updateChartMeta({
-    productName: capitalMarketData?.[0]?.name,
-    expectedReturn: Number(capitalMarketData?.[0]?.return || 0),
-    years: Math.max(parseInt(yearsInput?.value, 10) || 0, 0),
-  });
-  drawLineChart([]);
+  scheduleSimulation();
 });
