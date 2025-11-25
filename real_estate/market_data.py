@@ -7,16 +7,10 @@ class RealEstateMarketStatisticsPlaceholder():
         
     def get_object_statistics(self, region):
         if region == "germany":
-            return self.placeholder_data["object_statistics"]["germany_placeholder"].copy()
+            return self.placeholder_data["germany_placeholder"].copy()
         else:
-            return self.placeholder_data["object_statistics"]["plz_placeholder"].copy()
-        
-    def get_nebenkosten(self, region):
-        if region == "germany":
-            return self.placeholder_data["nebenkosten_statistics"]["germany_placeholder"].copy()
-        else:
-            return self.placeholder_data["nebenkosten_statistics"]["plz_placeholder"].copy()
-    
+            return self.placeholder_data["plz_placeholder"].copy()
+
 
 
 class RealEstateObjectGenerator():
@@ -58,11 +52,6 @@ class RealEstateMarket():
         
     def get_objects(self, region):
         return self.market_objects_provider.get_objects(region)
-        
-        
-    def get_nebenkosten(self, region):
-        return self.market_statistics_provider.get_nebenkosten(region)
-    
         
         
 def get_real_estate_market_placeholder(json_file):

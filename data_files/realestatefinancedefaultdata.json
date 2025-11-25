@@ -1,0 +1,21 @@
+{
+	"germany" : {
+		"AfA_per_year" : 0.02,
+		"AfA_of_purchase_price" : 0.80,
+		"interest_per_year" : 0.04,
+		"repayment_per_year" : 0.02,
+		"cost_increase_per_year" : 0.02,
+		"value_increase_per_year" : 0.02,
+		"rent_increase_per_year" : 0.02,
+		"nebenkosten_factor": 1.107
+	},
+	"plz" : {
+		"AfA_per_year" : 0.02,
+		"AfA_of_purchase_price" : 0.80,
+		"interest_per_year" : 0.04,
+		"repayment_per_year" : 0.02,
+		"cost_increase_per_year" : 0.03,
+		"value_increase_per_year" : 0.03,
+		"rent_increase_per_year" : 0.02
+	}
+}
