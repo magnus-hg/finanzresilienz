@@ -1,36 +1,31 @@
-"""Dataclasses describing capital-market entities."""
-from dataclasses import dataclass
-
-
-@dataclass
 class CapitalMarketInvestment:
-    """Simple wrapper for capital-market portfolio assumptions."""
+    def __init__(self, name, isin, expected_return):
+        self.name = name
+        self.isin = isin
+        self.expected_return = expected_return
+		self.current_value = 0
+		self.current_year = -1
+    
+    
+	def simulate_year(self, investment_amount):
+		self.current_value += investment_amount
+        self.current_value += self.current_value * (1 + expected_return)
+		self.current_year += 1
+        
+        return self.current_value, self.current_year
+        
+        
+def simulate_market_investment(name, isin, expected_return, , initial_investment_amount, yearly_investment_rate, years):
+    cmi = CapitalMarketInvestment(name, isin, expected_return)
+    values = []
+    for year in range(years):
+        if year == 0:
+            current_value, _ = cmi.simulate_year(initial_investment_amount + yearly_investment_rate)
+            values.append(current_value)
+        else:
+            current_value, _ = cmi.simulate_year(yearly_investment_rate)
+            values.append(current_value)
 
-    ticker: str
-    allocation_target_pct: float
-    expected_return_rate: float
-    volatility: float
-    dividend_yield: float
-    fees_pct: float
-    rebalancing_rule: str = "annual"
+    return values
 
-    @property
-    def net_return_rate(self) -> float:
-        """Expected annual return after subtracting fees."""
 
-        return self.expected_return_rate - self.fees_pct
-
-    def projected_value(self, initial_investment: float, years: int) -> float:
-        """Project investment value using geometric compounding."""
-
-        if initial_investment <= 0 or years <= 0:
-            return initial_investment
-        growth_factor = (1 + self.net_return_rate) ** years
-        return round(initial_investment * growth_factor, 2)
-
-    def expected_dividend_income(self, initial_investment: float) -> float:
-        """Estimate one year of dividend income on the position."""
-
-        if initial_investment <= 0:
-            return 0.0
-        return round(initial_investment * max(self.dividend_yield, 0.0), 2)
