@@ -148,14 +148,6 @@
                     </p>
                     <button type="button" id="simulate-portfolio">Vermögensentwicklung anzeigen</button>
                   </div>
-
-                  <div class="chart-card" aria-live="polite">
-                    <canvas id="capitalmarket-chart" aria-label="Vermögensentwicklung"></canvas>
-                    <p id="capitalmarket-chart-empty" class="muted">
-                      Geben Sie Vermögen und jährliche Sparrate ein und starten Sie die Simulation, um die
-                      Entwicklung zu sehen.
-                    </p>
-                  </div>
                 </div>
               </details>
             </label>
@@ -182,6 +174,14 @@
               </details>
             </label>
           </div>
+        </section>
+
+        <section class="chart-card" aria-live="polite">
+          <h3>Vermögensentwicklung</h3>
+          <canvas id="capitalmarket-chart" aria-label="Vermögensentwicklung"></canvas>
+          <p id="capitalmarket-chart-empty" class="muted">
+            Tragen Sie Ihr verfügbares Vermögen und Ihre jährliche Sparrate ein. Die Grafik startet dann automatisch.
+          </p>
         </section>
       </form>
     </section>

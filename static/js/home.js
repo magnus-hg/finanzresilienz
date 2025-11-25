@@ -127,6 +127,21 @@ document.addEventListener('DOMContentLoaded', () => {
     return Number.isFinite(value) ? value : 0;
   };
 
+  const hasFilledRequiredInputs = () =>
+    Boolean(availableWealthInput?.value?.trim()) && Boolean(yearlySavingsInput?.value?.trim());
+
+  let autoRunTimeout;
+
+  const scheduleSimulation = () => {
+    if (!hasFilledRequiredInputs()) {
+      drawLineChart([]);
+      return;
+    }
+
+    window.clearTimeout(autoRunTimeout);
+    autoRunTimeout = window.setTimeout(runSimulation, 250);
+  };
+
   const runSimulation = () => {
     if (!capitalMarketSelect) return;
 
@@ -164,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     capitalMarketSelect.addEventListener('change', (event) => {
       const index = Number(event.target.value) || 0;
       updateCapitalMarketDetails(index);
-      drawLineChart([]);
+      scheduleSimulation();
     });
 
     capitalMarketSelect.value = '0';
@@ -173,6 +188,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (simulateButton) {
     simulateButton.addEventListener('click', runSimulation);
+  }
+
+  if (availableWealthInput) {
+    availableWealthInput.addEventListener('input', scheduleSimulation);
+  }
+
+  if (yearlySavingsInput) {
+    yearlySavingsInput.addEventListener('input', scheduleSimulation);
+  }
+
+  if (yearsInput) {
+    yearsInput.addEventListener('input', scheduleSimulation);
   }
 
   drawLineChart([]);
