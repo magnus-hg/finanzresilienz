@@ -6,6 +6,7 @@ from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 from controllers import owner, rental
 from capital_market.models import simulate_market_investment
+from real_estate.market_data import get_real_estate_market_placeholder
 from tax_calculations import (
     est_2026,
     est_2026_married,
@@ -17,6 +18,12 @@ from tax_calculations import (
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
 DATA_DIR = Path(__file__).parent / "data_files"
+
+
+REAL_ESTATE_PLACEHOLDER_FILE = DATA_DIR / "realestateplaceholderdata.json"
+real_estate_market = get_real_estate_market_placeholder(
+    REAL_ESTATE_PLACEHOLDER_FILE.read_text(encoding="utf-8")
+)
 
 
 def load_data_files() -> Dict[str, object]:
