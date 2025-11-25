@@ -4,6 +4,29 @@ from typing import Optional
 
 
 @dataclass
+class Property:
+    identifier: str
+    price_eur: int
+    living_space_sqm: float
+    rooms: int
+    latitude: float
+    longitude: float
+    address: str
+    property_type: str
+    rent_price_eur: Optional[int] = None
+
+    @property
+    def price_per_sqm(self) -> float:
+        return round(self.price_eur / self.living_space_sqm, 2)
+
+    @property
+    def rent_per_sqm(self) -> Optional[float]:
+        if self.rent_price_eur is None:
+            return None
+        return round(self.rent_price_eur / self.living_space_sqm, 2)
+
+
+@dataclass
 class PropertyParams:
     """Property-related simulation parameters."""
 

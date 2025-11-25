@@ -6,11 +6,12 @@ from .finance import (
     calc_annuity,
     mortgage_schedule,
 )
-from .models import LoanParams, PropertyParams, RentParams, SimulationParams
+from .models import LoanParams, Property, PropertyParams, RentParams, SimulationParams
 from .rent import rent_for_year
 from .simulation import simulate
 
 __all__ = [
+    "Property",
     "PropertyParams",
     "LoanParams",
     "RentParams",
