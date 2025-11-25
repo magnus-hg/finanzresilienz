@@ -3,7 +3,8 @@ from dataclasses import asdict
 import random
 from typing import List, Optional, Tuple
 
-from capital_market.models import CapitalMarketInvestment, Property
+from capital_market.models import CapitalMarketInvestment
+from real_estate.models import Property
 from real_estate.finance import MAX_AMORTIZATION_YEARS, mortgage_schedule
 
 DEFAULT_INTEREST_RATE = 0.01
