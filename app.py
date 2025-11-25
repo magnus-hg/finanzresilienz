@@ -6,7 +6,8 @@ from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 from controllers import owner, rental
 from capital_market.models import simulate_market_investment
-from real_estate.market_data import get_real_estate_market_placeholder, get_real_estate_finance_data_placeholder
+from real_estate.market_data import get_real_estate_market_placeholder
+from real_estate.finance_data import get_real_estate_finance_data_placeholder
 from tax_calculations import (
     est_2026,
     est_2026_married,
