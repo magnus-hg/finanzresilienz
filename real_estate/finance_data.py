@@ -1,3 +1,5 @@
+import json
+
 class RealEstateFinanceDataProviderPlaceholder():
     def __init__(self, config_file):
         self.placeholder_data = json.loads(config_file)
@@ -15,12 +17,12 @@ class RealEstateFinanceData():
         self.real_estate_finance_data_provider = real_estate_finance_data_provider
         
     def get_finance_data(self, region):
-        self.real_estate_finance_data_provider.get_finance_data(region)
+        return self.real_estate_finance_data_provider.get_finance_data(region)
         
 
 
 def get_real_estate_finance_data_placeholder(json_file):
-    real_estate_finance_data_provider = RealEstateFinanceData(json_file)
+    real_estate_finance_data_provider = RealEstateFinanceDataProviderPlaceholder(json_file)
     real_estate_finance_data = RealEstateFinanceData(real_estate_finance_data_provider)
     
     return real_estate_finance_data
