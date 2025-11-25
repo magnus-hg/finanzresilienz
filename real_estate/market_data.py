@@ -25,9 +25,9 @@ class RealEstateObjectGenerator():
         self.num_objects_per_region = num_objects_per_region
         self.value_range = value_range
         
-    def get_random_value(self, attribute, value_range):
-        min_bound = attribute - attribute * value_range / 2
-        max_bound = attribute + attribute * value_range / 2
+    def get_random_value(self, attribute):
+        min_bound = attribute - attribute * self.value_range / 2
+        max_bound = attribute + attribute * self.value_range / 2
         return random.uniform(min_bound, max_bound)
         
     
