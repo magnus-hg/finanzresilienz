@@ -182,7 +182,58 @@ class SelfUsedPropertyInvestment:
 
 
 
-
+class RealEstateObject:
+    def __init__(self, buying_price, closing_rate, value_increase_per_year, afa_per_year, afa_factor):
+        self.value = buying_price
+        self.closing_rate = closing_rate
+        self.total_cost = cost * closing_rate
+        self.value_increase_per_year = value_increase_per_year
+        
+        self.afa_per_year = afa_per_year
+        self.afa_factor = afa_factor
+        
+        self.current_year = 0
+        
+        
+    def simulate_year(self):
+        
+    
+        pass
+        
+        
+        
+        
+class AnnuityLoan:
+    def __init__(self, principal_amount, interest_per_year, initial_repayment_per_year):
+        self.principal_amount = principal_amount
+        self.interest_per_year = interest_per_year # Zins
+        self.initial_repayment_per_year = initial_repayment_per_year # Tilgung
+        self.rate_per_year = self.interest_per_year + self.initial_repayment_per_year
+        self.annuity = self.rate_per_year * self.principal_amount
+        
+        self.current_year = 0
+        self.remaining_principal_amount = self.principal_amount
+        self.paid_off = False
+        
+    def simulate_year(self):
+        if self.paid_off:
+            self.current_year += 1
+            return 0, 0, 0, self.current_year, True
+    
+        interest_payment = self.remaining_principal_amount * self.interest_per_year
+        loan_repayment = self.annuity - interest_payment
+        
+        if (self.remaining_principal_amount - loan_repayment) <= 0:
+            self.paid_off = True
+            loan_repayment = self.remaining_principal_amount
+        else:
+            self.paid_off = False
+        
+        self.remaining_principal_amount = self.remaining_principal_amount - loan_repayment
+        
+        self.current_year += 1
+        
+        return self.remaining_principal_amount, loan_repayment, interest_payment, self.current_year, self.paid_off
 
 
 
@@ -190,7 +241,7 @@ class SelfUsedPropertyInvestment:
 
 
 class RealEstateInvestment:
-    def __init__(self, name, isin, expected_return):
+    def __init__(self, real_estate_object, annuity_loan):
         self.name = name
         self.isin = isin
         self.expected_return = expected_return
@@ -206,8 +257,8 @@ class RealEstateInvestment:
         return self.current_value, self.current_year
         
         
-def simulate_market_investment(name, isin, expected_return, initial_investment_amount, yearly_investment_rate, years):
-    cmi = CapitalMarketInvestment(name, isin, expected_return)
+def simulate_self_owned_real_estate_investment(name, isin, expected_return, initial_investment_amount, yearly_investment_rate, years):
+    cmi = RealEstateInvestment(name, isin, expected_return)
     values = []
     for year in range(years):
         if year == 0:
