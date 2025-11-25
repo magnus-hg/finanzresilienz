@@ -9,7 +9,7 @@ class CapitalMarketInvestment:
     
     def simulate_year(self, investment_amount):
         self.current_value += investment_amount
-        self.current_value += self.current_value * (1 + self.expected_return)
+        self.current_value += self.current_value * self.expected_return
         self.current_year += 1
         
         return self.current_value, self.current_year
@@ -26,6 +26,6 @@ def simulate_market_investment(name, isin, expected_return, initial_investment_a
             current_value, _ = cmi.simulate_year(yearly_investment_rate)
             values.append(current_value)
 
-    return values
+    return values, years
 
 
