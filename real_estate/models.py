@@ -260,7 +260,7 @@ class AnnuityLoan:
 
 
 class Tenant:
-    def __init__(net_rent_per_year, net_rent_increase_per_year, maintenance_cost_per_year, maintenance_cost_increase_per_year):
+    def __init__(self, net_rent_per_year, net_rent_increase_per_year, maintenance_cost_per_year, maintenance_cost_increase_per_year):
         self.net_rent_per_year = net_rent_per_year
         self.net_rent_per_year = net_rent_increase_per_year
         self.maintenance_cost = maintenance_cost_per_year
@@ -274,21 +274,41 @@ class Tenant:
 
 
 
+
+class Taxpayer:
+    def __init__(self, initial_taxable_income_per_year, taxable_income_increase_per_year, maritial_status):
+        self.initial_taxable_income_per_year = initial_taxable_income_per_year
+        self.taxable_income_per_year = self.initial_taxable_income_per_year
+        self.taxable_income_increase_per_year = taxable_income_increase_per_year
+        
+        self.maritial_status = maritial_status
+    
+    
+    def simulate_year(self):
+        self.taxable_income_per_year = self.taxable_income_per_year * (1 + self.taxable_income_increase_per_year)
+        
+        return self.taxable_income_per_year
+
+
+
+
 class RealEstateInvestment:
-    def __init__(self, real_estate_object, annuity_loan, tenant, landlord):
+    def __init__(self, real_estate_object, annuity_loan, tenant, taxpayer):
         self.real_estate_object = real_estate_object
         self.annuity_loan = annuity_loan
         self.tenant = tenant
-        self.landlord = landlord
+        self.taxpayer = taxpayer
         
     
     def simulate_year(self):
-        property_value, depreciated_amount, maintenance_cost, current_year, is_fully_depreciated = self.real_estate_object.simulate_year()
+        property_value, depreciated_amount, maintenance_cost_landlord, current_year, is_fully_depreciated = self.real_estate_object.simulate_year()
         remaining_principal_amount, loan_repayment, interest_payment, current_year, is_paid_off = self.annuity_loan.simulate_year()
+        rent, maintenance_cost_tenant = self.tenant.simulate_year()
         
-        tax_deductable = depreciated_amount + interest_payment + maintenance_cost
-        total_value = property_value - remaining_principal_amount
-        total_cost = interest_payment + maintenance_cost
+        effective_property_value = property_value - remaining_principal_amount
+        cashflow_before_tax = rent - loan_repayment - interest_payment - maintenance_cost_landlord
+        tax_deductable = depreciated_amount + interest_payment + maintenance_cost_landlord
+        
         
         return total_value, total_cost, tax_deductable
         
