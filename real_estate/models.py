@@ -183,23 +183,44 @@ class SelfUsedPropertyInvestment:
 
 
 class RealEstateObject:
-    def __init__(self, buying_price, closing_rate, value_increase_per_year, afa_per_year, afa_factor):
-        self.value = buying_price
-        self.closing_rate = closing_rate
-        self.total_cost = cost * closing_rate
-        self.value_increase_per_year = value_increase_per_year
+    def __init__(self, total_price, building_portion, value_increase_per_year, depreciation_per_year, maintenance_cost_per_year, maintenance_cost_increase_per_year):
+        self.initial_total_value = total_price
+        self.total_value = self.initial_total_value
         
-        self.afa_per_year = afa_per_year
-        self.afa_factor = afa_factor
+        # Land and Building Value based on initial total price
+        self.initial_building_value = total_price * building_portion
+        self.building_value = self.initial_building_value
+        self.land_value = total_price * (1 - building_portion)
+        
+        # Rates (as decimal, e.g., 0.02 for 2%)
+        self.value_increase_rate = value_increase_per_year 
+        self.depreciation_rate = depreciation_per_year     
+        
+        self.fully_depreciated = False
+        
+        self.initial_maintenance_cost_per_year = maintenance_cost_per_year
+        self.maintenance_cost_per_year = maintenance_cost_per_year
+        self.maintenance_cost_increase_per_year = maintenance_cost_increase_per_year
         
         self.current_year = 0
         
         
     def simulate_year(self):
+        self.total_value *= (1 + self.value_increase_rate)
+        depreciation_amount = self.initial_building_value * self.depreciation_rate
         
-    
-        pass
+        depreciatiable_amount = min(full_depreciation, self.building_value)
+            
+        self.building_value -= depreciatiable_amount
         
+        if self.building_value = 0:
+            self.fully_depreciated = True
+        
+        self.maintenance_cost_per_year *= (1 + self.maintenance_cost_increase_per_year)
+        
+        self.current_year += 1
+        
+        return self.total_value, depreciatiable_amount, self.maintenance_cost_per_year, self.current_year, self.fully_depreciated
         
         
         
@@ -215,6 +236,7 @@ class AnnuityLoan:
         self.remaining_principal_amount = self.principal_amount
         self.paid_off = False
         
+        
     def simulate_year(self):
         if self.paid_off:
             self.current_year += 1
@@ -226,8 +248,7 @@ class AnnuityLoan:
         if (self.remaining_principal_amount - loan_repayment) <= 0:
             self.paid_off = True
             loan_repayment = self.remaining_principal_amount
-        else:
-            self.paid_off = False
+
         
         self.remaining_principal_amount = self.remaining_principal_amount - loan_repayment
         
@@ -238,37 +259,38 @@ class AnnuityLoan:
 
 
 
+class Tenant:
+    def __init__(net_rent_per_year, net_rent_increase_per_year, maintenance_cost_per_year, maintenance_cost_increase_per_year):
+        self.net_rent_per_year = net_rent_per_year
+        self.net_rent_per_year = net_rent_increase_per_year
+        self.maintenance_cost = maintenance_cost_per_year
+        self.maintenance_cost_increase_per_year  = maintenance_cost_increase_per_year
+        
+    def simulate_year(self):
+        self.net_rent_per_year *= (1 + self.net_rent_increase_per_year)
+        self.maintenance_cost_per_year *= (1 + self.maintenance_cost_increase_per_year)
+        
+        return self.net_rent_per_year, self.maintenance_cost_per_year
+
 
 
 class RealEstateInvestment:
-    def __init__(self, real_estate_object, annuity_loan):
-        self.name = name
-        self.isin = isin
-        self.expected_return = expected_return
-        self.current_value = 0
-        self.current_year = -1
+    def __init__(self, real_estate_object, annuity_loan, tenant, landlord):
+        self.real_estate_object = real_estate_object
+        self.annuity_loan = annuity_loan
+        self.tenant = tenant
+        self.landlord = landlord
+        
     
-    
-    def simulate_year(self, investment_amount):
-        self.current_value += investment_amount
-        self.current_value += self.current_value * self.expected_return
-        self.current_year += 1
+    def simulate_year(self):
+        property_value, depreciated_amount, maintenance_cost, current_year, is_fully_depreciated = self.real_estate_object.simulate_year()
+        remaining_principal_amount, loan_repayment, interest_payment, current_year, is_paid_off = self.annuity_loan.simulate_year()
         
-        return self.current_value, self.current_year
+        tax_deductable = depreciated_amount + interest_payment + maintenance_cost
+        total_value = property_value - remaining_principal_amount
+        total_cost = interest_payment + maintenance_cost
         
+        return total_value, total_cost, tax_deductable
         
-def simulate_self_owned_real_estate_investment(name, isin, expected_return, initial_investment_amount, yearly_investment_rate, years):
-    cmi = RealEstateInvestment(name, isin, expected_return)
-    values = []
-    for year in range(years):
-        if year == 0:
-            current_value, _ = cmi.simulate_year(initial_investment_amount + yearly_investment_rate)
-            values.append(current_value)
-        else:
-            current_value, _ = cmi.simulate_year(yearly_investment_rate)
-            values.append(current_value)
-
-    return values, years
-
 
 
