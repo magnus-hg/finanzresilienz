@@ -206,7 +206,9 @@ class RealEstateObject:
         
         
     def simulate_year(self):
-        self.total_value *= (1 + self.value_increase_rate)
+        value_increase = self.total_value * self.value_increase_rate
+        self.total_value += value_increase
+        
         depreciation_amount = self.initial_building_value * self.depreciation_rate
         
         depreciatiable_amount = min(full_depreciation, self.building_value)
@@ -220,7 +222,7 @@ class RealEstateObject:
         
         self.current_year += 1
         
-        return self.total_value, depreciatiable_amount, self.maintenance_cost_per_year, self.current_year, self.fully_depreciated
+        return self.total_value, value_increase, depreciatiable_amount, self.maintenance_cost_per_year, self.current_year, self.fully_depreciated
         
         
         
@@ -266,16 +268,20 @@ class Tenant:
         self.maintenance_cost = maintenance_cost_per_year
         self.maintenance_cost_increase_per_year  = maintenance_cost_increase_per_year
         
+        self.current_year = 0 
+        
     def simulate_year(self):
         self.net_rent_per_year *= (1 + self.net_rent_increase_per_year)
         self.maintenance_cost_per_year *= (1 + self.maintenance_cost_increase_per_year)
+        
+        self.current_year += 1
         
         return self.net_rent_per_year, self.maintenance_cost_per_year
 
 
 
 
-class Taxpayer:
+class Landlord:
     def __init__(self, initial_taxable_income_per_year, taxable_income_increase_per_year, maritial_status):
         self.initial_taxable_income_per_year = initial_taxable_income_per_year
         self.taxable_income_per_year = self.initial_taxable_income_per_year
@@ -283,9 +289,13 @@ class Taxpayer:
         
         self.maritial_status = maritial_status
     
+        self.current_year = 0
+        
     
     def simulate_year(self):
         self.taxable_income_per_year = self.taxable_income_per_year * (1 + self.taxable_income_increase_per_year)
+        
+        self.current_year += 1
         
         return self.taxable_income_per_year
 
@@ -293,22 +303,33 @@ class Taxpayer:
 
 
 class RealEstateInvestment:
-    def __init__(self, real_estate_object, annuity_loan, tenant, taxpayer):
+    def __init__(self, real_estate_object, annuity_loan, tenant, landlord, tax_interface, initial_year):
         self.real_estate_object = real_estate_object
         self.annuity_loan = annuity_loan
         self.tenant = tenant
-        self.taxpayer = taxpayer
+        self.landlord = landlord
+        
+        self.tax_interface = tax_interface
+        
+        self.initial_year = initial_year
+        self.current_year = self.initial_year
         
     
     def simulate_year(self):
-        property_value, depreciated_amount, maintenance_cost_landlord, current_year, is_fully_depreciated = self.real_estate_object.simulate_year()
+        property_value, value_increase, depreciated_amount, maintenance_cost_landlord, current_year, is_fully_depreciated = self.real_estate_object.simulate_year()
         remaining_principal_amount, loan_repayment, interest_payment, current_year, is_paid_off = self.annuity_loan.simulate_year()
         rent, maintenance_cost_tenant = self.tenant.simulate_year()
+        taxable_income = self.landlord.simulate_year()
         
         effective_property_value = property_value - remaining_principal_amount
         cashflow_before_tax = rent - loan_repayment - interest_payment - maintenance_cost_landlord
-        tax_deductable = depreciated_amount + interest_payment + maintenance_cost_landlord
+        taxable_income_increase = rent - depreciated_amount - interest_payment - maintenance_cost_landlord
         
+        tax_wo_real_estate = self.tax_interface(taxable_income, year)
+        tax_w_real_estate = self.tax_interface(taxable_income + taxable_income_increase, year)
+        additional_tax = tax_w_real_estate - tax_wo_real_estate
+        
+        cashflow_after_tax = cashflow_before_tax - additional_tax
         
         return total_value, total_cost, tax_deductable
         
