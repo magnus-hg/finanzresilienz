@@ -1,198 +1,18 @@
-"""Domain models for real estate simulations."""
-from dataclasses import dataclass
-from typing import Optional
-
-
-@dataclass
-class Property:
-    identifier: str
-    price_eur: int
-    living_space_sqm: float
-    rooms: int
-    latitude: float
-    longitude: float
-    address: str
-    property_type: str
-    rent_price_eur: Optional[int] = None
-
-    @property
-    def price_per_sqm(self) -> float:
-        return round(self.price_eur / self.living_space_sqm, 2)
-
-    @property
-    def rent_per_sqm(self) -> Optional[float]:
-        if self.rent_price_eur is None:
-            return None
-        return round(self.rent_price_eur / self.living_space_sqm, 2)
-
-
-@dataclass
-class PropertyParams:
-    """Property-related simulation parameters."""
-
-    purchase_price: float
-    transaction_cost_factor: float
-    value_growth_rate: float
-    depreciation_basis: float
-    depreciation_rate: float
-
-
-@dataclass
-class LoanParams:
-    """Loan configuration used for amortization calculations."""
-
-    principal: float
-    interest_rate: float
-    years: int
-    annuity: Optional[float] = None
-
-
-@dataclass
-class RentParams:
-    """Rent-related assumptions for the simulation horizon."""
-
-    net_cold_rent_month: float
-    operating_costs_month: float
-    mgmt_costs_annual: float
-    rent_increase_rate: float
-    rent_increase_interval_years: int
-
-
-@dataclass
-class SimulationParams:
-    """Top-level configuration for a rental property simulation."""
-
-    start_year: int
-    n_years: int
-    property_params: PropertyParams
-    loan_params: LoanParams
-    rent_params: RentParams
-    tax_rate: float = 0.0
-
-
-@dataclass
-class RentalInvestment:
-    """Bundle inputs and helpers for buy-to-let simulations."""
-
-    property_params: PropertyParams
-    loan_params: LoanParams
-    rent_params: RentParams
-    holding_years: int
-    vacancy_rate: float = 0.0
-    maintenance_reserve_pct: float = 0.0
-    tax_rate: float = 0.0
-
-    def _adjusted_rent_params(self) -> RentParams:
-        """Apply vacancy and maintenance assumptions to rent params."""
-
-        vacancy_multiplier = max(0.0, min(1.0, 1 - self.vacancy_rate))
-        maintenance_reserve = self.property_params.purchase_price * self.maintenance_reserve_pct
-        return RentParams(
-            net_cold_rent_month=self.rent_params.net_cold_rent_month * vacancy_multiplier,
-            operating_costs_month=self.rent_params.operating_costs_month,
-            mgmt_costs_annual=self.rent_params.mgmt_costs_annual + maintenance_reserve,
-            rent_increase_rate=self.rent_params.rent_increase_rate,
-            rent_increase_interval_years=self.rent_params.rent_increase_interval_years,
-        )
-
-    def to_simulation_params(self, start_year: int) -> SimulationParams:
-        """Translate inputs into reusable ``SimulationParams``."""
-
-        return SimulationParams(
-            start_year=start_year,
-            n_years=self.holding_years,
-            property_params=self.property_params,
-            loan_params=self.loan_params,
-            rent_params=self._adjusted_rent_params(),
-            tax_rate=self.tax_rate,
-        )
-
-    def run_simulation(self, start_year: int):
-        """Convenience wrapper to execute the simulation pipeline."""
-
-        from .simulation import simulate
-
-        params = self.to_simulation_params(start_year)
-        return simulate(params)
-
-
-@dataclass
-class SelfUsedPropertyInvestment:
-    """Represents a self-occupied property with financing details."""
-
-    property_params: PropertyParams
-    loan_params: LoanParams
-    imputed_rent_savings: float = 0.0
-    maintenance_reserve_pct: float = 0.0
-    opportunity_cost_rate: float = 0.0
-    holding_years: int = 30
-
-    def _annuity(self) -> float:
-        from .finance import calc_annuity
-
-        if self.loan_params.annuity is not None:
-            return self.loan_params.annuity
-        return calc_annuity(
-            self.loan_params.principal, self.loan_params.interest_rate, self.loan_params.years
-        )
-
-    def _mortgage_projection(self, years: int) -> tuple[float, float]:
-        """Return remaining balance and cumulative interest after ``years``."""
-
-        from .finance import amortization_step
-
-        balance = self.loan_params.principal
-        interest_paid = 0.0
-        annuity = self._annuity()
-        for _ in range(years):
-            balance, interest, repayment = amortization_step(balance, self.loan_params.interest_rate, annuity)
-            interest_paid += interest
-            if balance <= 0:
-                balance = 0.0
-                break
-        return balance, interest_paid
-
-    def projected_equity(self, years: Optional[int] = None) -> float:
-        """Estimate equity after property appreciation and amortization."""
-
-        target_years = years if years is not None else self.holding_years
-        value = self.property_params.purchase_price * (1 + self.property_params.value_growth_rate) ** target_years
-        remaining_balance, _ = self._mortgage_projection(target_years)
-        return value - remaining_balance
-
-    def total_cost_of_ownership(self, years: Optional[int] = None) -> float:
-        """Approximate cumulative ownership cost net of imputed rent savings."""
-
-        target_years = years if years is not None else self.holding_years
-        _, interest_paid = self._mortgage_projection(target_years)
-
-        transaction_costs = self.property_params.purchase_price * self.property_params.transaction_cost_factor
-        maintenance = self.property_params.purchase_price * self.maintenance_reserve_pct * target_years
-        imputed_savings = self.imputed_rent_savings * 12 * target_years
-
-        equity_contribution = max(
-            self.property_params.purchase_price + transaction_costs - self.loan_params.principal, 0.0
-        )
-        opportunity_cost = equity_contribution * ((1 + self.opportunity_cost_rate) ** target_years - 1)
-
-        return transaction_costs + maintenance + interest_paid + opportunity_cost - imputed_savings
-
-
-
-
-
-
 class RealEstateObject:
-    def __init__(self, total_price, building_portion, value_increase_per_year, depreciation_per_year, maintenance_cost_per_year, maintenance_cost_increase_per_year):
-        self.initial_total_value = total_price
+    def __init__(self, property_price, purchase_fees, building_portion, value_increase_per_year, depreciation_per_year, maintenance_cost_per_year, maintenance_cost_increase_per_year):
+
+        self.total_price = property_price + purchase_fees
+
+        self.initial_building_value = property_price * building_portion
+        self.building_book_value = self.initial_building_value
+        self.building_market_value = self.initial_building_value
+        
+        self.initial_land_value = property_price * (1 - building_portion)
+        self.land_value = self.initial_land_value
+        
+        self.initial_total_value = self.initial_building_value + self.initial_land_value
         self.total_value = self.initial_total_value
         
-        # Land and Building Value based on initial total price
-        self.initial_building_value = total_price * building_portion
-        self.building_value = self.initial_building_value
-        self.land_value = total_price * (1 - building_portion)
-        
-        # Rates (as decimal, e.g., 0.02 for 2%)
         self.value_increase_rate = value_increase_per_year 
         self.depreciation_rate = depreciation_per_year     
         
@@ -206,23 +26,29 @@ class RealEstateObject:
         
         
     def simulate_year(self):
-        value_increase = self.total_value * self.value_increase_rate
-        self.total_value += value_increase
+        building_market_value_increase = self.building_market_value * self.value_increase_rate
+        land_value_increase = self.land_value * self.value_increase_rate
+        
+        value_increase = land_value_increase + building_market_value_increase
+        
+        self.land_value += land_value_increase
+        self.building_market_value += building_market_value_increase
+        
+        self.total_value = self.land_value + self.building_market_value
         
         depreciation_amount = self.initial_building_value * self.depreciation_rate
-        
-        depreciatiable_amount = min(full_depreciation, self.building_value)
+        depreciable_amount = min(depreciation_amount, self.building_book_value)
             
-        self.building_value -= depreciatiable_amount
-        
-        if self.building_value = 0:
+        self.building_book_value = max(self.building_book_value - depreciable_amount, 0.0)
+        if self.building_book_value <= 1e-6:
+            self.building_book_value = 0.0
             self.fully_depreciated = True
         
         self.maintenance_cost_per_year *= (1 + self.maintenance_cost_increase_per_year)
         
         self.current_year += 1
         
-        return self.total_value, value_increase, depreciatiable_amount, self.maintenance_cost_per_year, self.current_year, self.fully_depreciated
+        return self.total_value, value_increase, depreciable_amount, self.maintenance_cost_per_year, self.current_year, self.fully_depreciated
         
         
         
@@ -264,8 +90,8 @@ class AnnuityLoan:
 class Tenant:
     def __init__(self, net_rent_per_year, net_rent_increase_per_year, maintenance_cost_per_year, maintenance_cost_increase_per_year):
         self.net_rent_per_year = net_rent_per_year
-        self.net_rent_per_year = net_rent_increase_per_year
-        self.maintenance_cost = maintenance_cost_per_year
+        self.net_rent_increase_per_year = net_rent_increase_per_year
+        self.maintenance_cost_per_year = maintenance_cost_per_year
         self.maintenance_cost_increase_per_year  = maintenance_cost_increase_per_year
         
         self.current_year = 0 
@@ -282,12 +108,12 @@ class Tenant:
 
 
 class Landlord:
-    def __init__(self, initial_taxable_income_per_year, taxable_income_increase_per_year, maritial_status):
+    def __init__(self, initial_taxable_income_per_year, taxable_income_increase_per_year, marital_status):
         self.initial_taxable_income_per_year = initial_taxable_income_per_year
         self.taxable_income_per_year = self.initial_taxable_income_per_year
         self.taxable_income_increase_per_year = taxable_income_increase_per_year
         
-        self.maritial_status = maritial_status
+        self.marital_status = marital_status
     
         self.current_year = 0
         
@@ -314,24 +140,175 @@ class RealEstateInvestment:
         self.initial_year = initial_year
         self.current_year = self.initial_year
         
+        self.initial_wealth = real_estate_object.initial_total_value - annuity_loan.principal_amount
+        self.current_wealth = self.initial_wealth
+        
+        self.invested_capital = real_estate_object.total_price
+    
     
     def simulate_year(self):
         property_value, value_increase, depreciated_amount, maintenance_cost_landlord, current_year, is_fully_depreciated = self.real_estate_object.simulate_year()
         remaining_principal_amount, loan_repayment, interest_payment, current_year, is_paid_off = self.annuity_loan.simulate_year()
-        rent, maintenance_cost_tenant = self.tenant.simulate_year()
+        rent, _ = self.tenant.simulate_year()
         taxable_income = self.landlord.simulate_year()
         
         effective_property_value = property_value - remaining_principal_amount
         cashflow_before_tax = rent - loan_repayment - interest_payment - maintenance_cost_landlord
         taxable_income_increase = rent - depreciated_amount - interest_payment - maintenance_cost_landlord
         
-        tax_wo_real_estate = self.tax_interface(taxable_income, year)
-        tax_w_real_estate = self.tax_interface(taxable_income + taxable_income_increase, year)
+        tax_wo_real_estate, _, _ = self.tax_interface.calculate_tax(self.landlord.marital_status, taxable_income, self.current_year)
+        tax_w_real_estate, _, _ = self.tax_interface.calculate_tax(self.landlord.marital_status, taxable_income + taxable_income_increase, self.current_year)
         additional_tax = tax_w_real_estate - tax_wo_real_estate
         
         cashflow_after_tax = cashflow_before_tax - additional_tax
         
-        return total_value, total_cost, tax_deductable
+        wealth_increase = value_increase + rent - interest_payment - maintenance_cost_landlord - additional_tax
+        self.current_wealth += wealth_increase
         
+        return_on_equity = wealth_increase / self.invested_capital
+        return_on_equity_wo_value_increase = (wealth_increase - value_increase) / self.invested_capital
+        
+        self.current_year += 1
+        
+        
+        return self.current_wealth, return_on_equity, return_on_equity_wo_value_increase
+        
+
+
+class TaxInterface:
+    """
+    German income tax approximation with 2026 as base law.
+
+    For year >= base_year, taxable income is deflated into base_year euros
+    using a bracket_shift_rate_per_year (e.g. 0.02 for 2% p.a.),
+    the 2026 curve is applied, and the tax result is re-inflated.
+    """
+
+    def __init__(self, base_year: int = 2026, bracket_shift_rate_per_year: float = 0.02):
+        self.base_year = base_year
+        self.bracket_shift_rate_per_year = bracket_shift_rate_per_year
+
+    # ---------- PUBLIC API ----------
+
+    def calculate_tax(self, marital_status: str, taxable_income: float, year: int):
+        """
+        :param marital_status: "single" or "married"
+        :param taxable_income: taxable income (zvE) in that year, nominal €
+        :param year: tax year, must be >= base_year
+        :return: (tax_amount, average_rate_percent, marginal_rate_percent)
+        """
+        if year < self.base_year:
+            raise ValueError(f"Unsupported tax year: {year} (must be >= {self.base_year})")
+
+        income = max(float(taxable_income), 0.0)
+        if income <= 0:
+            return 0.0, 0.0, 0.0
+
+        status = marital_status.strip().lower()
+        if status not in ("single", "married"):
+            raise ValueError(f"Invalid marital status: {marital_status!r}")
+
+        # --- Indexation: convert nominal income into base-year real income ---
+        factor = (1.0 + self.bracket_shift_rate_per_year) ** (year - self.base_year)
+        income_real = income / factor  # income in base_year euros
+
+        # Apply base-year tax law on real income
+        if status == "single":
+            tax_real, _, marginal = self._single_base(income_real)
+        else:
+            tax_real, _, marginal = self._married_base(income_real)
+
+        # Re-inflate tax result to nominal euros
+        tax_nominal = tax_real * factor
+
+        # Average rate based on nominal income
+        avg_rate = tax_nominal / income * 100.0 if income > 0 else 0.0
+
+        # Marginal rate stays the base-year marginal at real income (dimensionless)
+        marginal_rate = marginal
+
+        return tax_nominal, avg_rate, marginal_rate
+
+    # ---------- BASE-YEAR (2026) LAW ----------
+
+    def _single_base(self, zve_real: float):
+        """
+        2026 Grundtabelle on real (base-year) zvE.
+        Returns (tax_real, avg_rate_percent, marginal_rate_percent).
+        """
+        tax = self._est_2026(zve_real)
+        x = max(int(zve_real), 1)
+        avg = tax / x * 100.0
+        marginal = self._marginal_2026(zve_real)
+        return tax, avg, marginal
+
+    def _married_base(self, joint_zve_real: float):
+        """
+        2026 Splittingtabelle on real (base-year) zvE.
+        Returns (tax_real, avg_rate_percent, marginal_rate_percent).
+        """
+        if joint_zve_real <= 0:
+            return 0.0, 0.0, 0.0
+
+        half = joint_zve_real / 2.0
+        tax_half = self._est_2026(half)
+        tax = 2.0 * tax_half
+
+        x = max(joint_zve_real, 1.0)
+        avg = tax / x * 100.0
+
+        # marginal is derivative w.r.t. half zvE; for splitting, we use marginal at half income
+        marginal = self._marginal_2026(half)
+        return tax, avg, marginal
+
+    # ---------- 2026 ESTIMATE + MARGINAL CURVE (unchanged) ----------
+
+    @staticmethod
+    def _est_2026(zve: float) -> float:
+        """
+        Base-year (2026) tax function in base-year euros.
+        """
+        x = int(zve)
+
+        if x <= 12_348:
+            return 0.0
+
+        if x <= 17_799:
+            y = (x - 12_348) / 10_000
+            return (914.51 * y + 1_400.0) * y
+
+        if x <= 69_878:
+            z = (x - 17_799) / 10_000
+            return (173.1 * z + 2_397.0) * z + 1_034.87
+
+        if x <= 277_825:
+            return 0.42 * x - 11_135.63
+
+        return 0.45 * x - 19_470.38
+
+    @staticmethod
+    def _marginal_2026(zve: float) -> float:
+        """
+        Base-year marginal rate in percent, as function of base-year zvE.
+        """
+        x = int(zve)
+
+        if x <= 12_348:
+            return 0.0
+
+        if x <= 17_799:
+            y = (x - 12_348) / 10_000
+            # derivative of (914.51*y + 1400)*y w.r.t. x, scaled to %
+            return (2 * 914.51 * y + 1_400.0) / 10_000 * 100.0
+
+        if x <= 69_878:
+            z = (x - 17_799) / 10_000
+            # derivative of (173.1*z + 2397)*z + 1034.87
+            return (2 * 173.1 * z + 2_397.0) / 10_000 * 100.0
+
+        if x <= 277_825:
+            return 42.0
+
+        return 45.0
 
 
